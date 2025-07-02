@@ -18,6 +18,23 @@ const Login = () => {
     setIsLoading(true);
     
     try {
+      // Additional validation before attempting authentication
+      if (!email || !password) {
+        toast.error('Please enter both email and password');
+        setIsLoading(false);
+        return;
+      }
+
+      // Email format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        toast.error('Please enter a valid email address');
+        setIsLoading(false);
+        return;
+      }
+
+      console.log(`Attempting ${isSignUp ? 'signup' : 'login'} for:`, email);
+      
       if (isSignUp) {
         // Validation for sign up
         if (password !== confirmPassword) {
@@ -33,14 +50,16 @@ const Login = () => {
         
         await signup(email, password);
         toast.success('Account created successfully! Welcome to Campus Engage!');
+        console.log('Signup successful for:', email);
       } else {
         await login(email, password);
         toast.success('Welcome back to Campus Engage!');
+        console.log('Login successful for:', email);
       }
     } catch (error) {
-      console.error('Auth error:', error);
+      console.error('Auth error for', email, ':', error);
       if (error.code === 'auth/user-not-found') {
-        toast.error('No account found with this email. Please sign up first.');
+        toast.error('No account found with this email. Please sign up first or check your email.');
       } else if (error.code === 'auth/wrong-password') {
         toast.error('Incorrect password. Please try again.');
       } else if (error.code === 'auth/email-already-in-use') {
@@ -49,8 +68,17 @@ const Login = () => {
         toast.error('Password is too weak. Please choose a stronger password.');
       } else if (error.code === 'auth/invalid-email') {
         toast.error('Invalid email address. Please check and try again.');
+      } else if (error.code === 'auth/invalid-credential') {
+        toast.error('Invalid email or password. Please check your credentials.');
+      } else if (error.code === 'auth/too-many-requests') {
+        toast.error('Too many failed attempts. Please try again later.');
+      } else if (error.code === 'auth/network-request-failed') {
+        toast.error('Network error. Please check your internet connection and try again.');
       } else {
-        toast.error(isSignUp ? 'Sign up failed. Please try again.' : 'Sign in failed. Please try again.');
+        toast.error(isSignUp 
+          ? 'Failed to create account. Please try again.' 
+          : 'Sign in failed. Please check your email and password.'
+        );
       }
     } finally {
       setIsLoading(false);

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Test Guide</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .test-case { background: #f5f5f5; padding: 15px; margin: 10px 0; border-left: 4px solid #007bff; }
+        .pass { border-left-color: #28a745; }
+        .fail { border-left-color: #dc3545; }
+        .warning { border-left-color: #ffc107; }
+        code { background: #e9ecef; padding: 2px 4px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>Campus Engagement Platform - Authentication Test Guide</h1>
+    
+    <h2>🔒 Security Status: ENHANCED</h2>
+    <p>The authentication system has been hardened to prevent unauthorized access.</p>
+    
+    <h2>Test Cases</h2>
+    
+    <div class="test-case fail">
+        <h3>❌ Test 1: Random Email (Should FAIL)</h3>
+        <p><strong>Email:</strong> <code>random@test.com</code></p>
+        <p><strong>Password:</strong> <code>anypassword</code></p>
+        <p><strong>Expected Result:</strong> Authentication should fail with "Invalid email or password" error</p>
+        <p><strong>Why it fails:</strong> This email is not registered in Firebase</p>
+    </div>
+    
+    <div class="test-case fail">
+        <h3>❌ Test 2: Real Email, Wrong Password (Should FAIL)</h3>
+        <p><strong>Email:</strong> <code>[your-firebase-user]@gmail.com</code></p>
+        <p><strong>Password:</strong> <code>wrongpassword</code></p>
+        <p><strong>Expected Result:</strong> "Incorrect password" error</p>
+        <p><strong>Why it fails:</strong> Password doesn't match Firebase record</p>
+    </div>
+    
+    <div class="test-case fail">
+        <h3>❌ Test 3: Invalid Email Format (Should FAIL)</h3>
+        <p><strong>Email:</strong> <code>notanemail</code></p>
+        <p><strong>Password:</strong> <code>password123</code></p>
+        <p><strong>Expected Result:</strong> "Please enter a valid email address" error</p>
+        <p><strong>Why it fails:</strong> Email format validation</p>
+    </div>
+    
+    <div class="test-case pass">
+        <h3>✅ Test 4: Demo Account (Should PASS)</h3>
+        <p><strong>Email:</strong> <code>demo@university.edu</code></p>
+        <p><strong>Password:</strong> <code>demo123</code></p>
+        <p><strong>Expected Result:</strong> Login successful (only if Firebase is unavailable)</p>
+        <p><strong>Note:</strong> This only works as a fallback when Firebase has network issues</p>
+    </div>
+    
+    <div class="test-case pass">
+        <h3>✅ Test 5: Real Firebase User (Should PASS)</h3>
+        <p><strong>Email:</strong> <code>[your-registered-email]</code></p>
+        <p><strong>Password:</strong> <code>[your-correct-password]</code></p>
+        <p><strong>Expected Result:</strong> Login successful</p>
+        <p><strong>Note:</strong> Must be a real account created in your Firebase project</p>
+    </div>
+    
+    <h2>How to Test</h2>
+    <ol>
+        <li>Open your browser and navigate to the login page</li>
+        <li>Open browser Developer Tools (F12) and go to Console tab</li>
+        <li>Try each test case above</li>
+        <li>Check the console for authentication logs</li>
+        <li>Verify that only valid users can access the dashboard</li>
+    </ol>
+    
+    <h2>Expected Console Logs</h2>
+    <div class="test-case">
+        <h3>For Failed Attempts:</h3>
+        <ul>
+            <li><code>Attempting login for: [email]</code></li>
+            <li><code>Firebase login failed: [error-code] [error-message]</code></li>
+            <li><code>Authentication rejected for: [email]</code></li>
+        </ul>
+    </div>
+    
+    <div class="test-case">
+        <h3>For Successful Attempts:</h3>
+        <ul>
+            <li><code>Attempting login for: [email]</code></li>
+            <li><code>Firebase login successful for: [email]</code></li>
+            <li><code>Login successful for: [email]</code></li>
+            <li><code>Authorized Firebase user set: [email]</code></li>
+        </ul>
+    </div>
+    
+    <h2>🚨 If Random Emails Are Still Working</h2>
+    <div class="test-case warning">
+        <p>If you can still log in with random emails, check:</p>
+        <ul>
+            <li>Clear browser cache and localStorage</li>
+            <li>Ensure you're testing with the updated code</li>
+            <li>Check Firebase Console for unexpected user registrations</li>
+            <li>Verify Firebase authentication is enabled</li>
+            <li>Check browser console for error messages</li>
+        </ul>
+    </div>
+    
+    <h2>Creating Test Users</h2>
+    <div class="test-case">
+        <p>To create valid test users:</p>
+        <ol>
+            <li>Use the Sign Up form in the application</li>
+            <li>Or create users directly in Firebase Console</li>
+            <li>Make sure to use real email addresses</li>
+            <li>Set strong passwords (6+ characters)</li>
+        </ol>
+    </div>
+</body>
+</html>
