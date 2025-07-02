@@ -1,4 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { 
+  collection, 
+  addDoc, 
+  getDocs, 
+  doc, 
+  updateDoc, 
+  deleteDoc,
+  onSnapshot,
+  query,
+  orderBy
+} from 'firebase/firestore';
+import { db } from '../config/firebase';
+import toast from 'react-hot-toast';
 
 const EventContext = createContext();
 
@@ -12,12 +25,11 @@ export const useEvents = () => {
 
 export const EventProvider = ({ children }) => {
   const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Mock events data
+  // Mock events data for initial setup
   const mockEvents = [
     {
-      id: '1',
       title: 'Tech Symposium 2025',
       description: 'Annual technology symposium featuring latest innovations and research presentations.',
       date: '2025-07-15',
@@ -28,10 +40,9 @@ export const EventProvider = ({ children }) => {
       attendees: [],
       maxAttendees: 200,
       isPublic: true,
-      qrCode: 'tech-symposium-2025-qr'
+      createdAt: new Date().toISOString()
     },
     {
-      id: '2',
       title: 'Basketball Championship',
       description: 'Inter-college basketball tournament finals.',
       date: '2025-07-08',
@@ -42,10 +53,9 @@ export const EventProvider = ({ children }) => {
       attendees: [],
       maxAttendees: 500,
       isPublic: true,
-      qrCode: 'basketball-championship-qr'
+      createdAt: new Date().toISOString()
     },
     {
-      id: '3',
       title: 'Study Group - Data Structures',
       description: 'Weekly study group for data structures and algorithms.',
       date: '2025-07-05',
@@ -56,88 +66,203 @@ export const EventProvider = ({ children }) => {
       attendees: [],
       maxAttendees: 25,
       isPublic: true,
-      qrCode: 'study-group-ds-qr'
+      createdAt: new Date().toISOString()
     }
   ];
 
   useEffect(() => {
-    // Load events from localStorage or use mock data
-    const savedEvents = localStorage.getItem('campus-events');
-    if (savedEvents) {
-      setEvents(JSON.parse(savedEvents));
-    } else {
-      setEvents(mockEvents);
-      localStorage.setItem('campus-events', JSON.stringify(mockEvents));
-    }
+    // Set up real-time listener for events collection
+    const q = query(collection(db, 'events'), orderBy('createdAt', 'desc'));
+    
+    const unsubscribe = onSnapshot(q, 
+      async (snapshot) => {
+        if (snapshot.empty) {
+          // If no events exist, add mock data
+          console.log('No events found, adding mock data...');
+          try {
+            for (const mockEvent of mockEvents) {
+              await addDoc(collection(db, 'events'), mockEvent);
+            }
+          } catch (error) {
+            console.error('Error adding mock events:', error);
+            // Fallback to localStorage if Firestore fails
+            const savedEvents = localStorage.getItem('campus-events');
+            if (savedEvents) {
+              setEvents(JSON.parse(savedEvents));
+            } else {
+              setEvents(mockEvents.map((event, index) => ({
+                ...event,
+                id: `mock-${index}`,
+                qrCode: `${event.title.toLowerCase().replace(/\s+/g, '-')}-qr`
+              })));
+              localStorage.setItem('campus-events', JSON.stringify(events));
+            }
+            setLoading(false);
+          }
+        } else {
+          const eventsData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            qrCode: `${doc.data().title?.toLowerCase().replace(/\s+/g, '-')}-${doc.id}`
+          }));
+          setEvents(eventsData);
+          setLoading(false);
+        }
+      },
+      (error) => {
+        console.error('Error fetching events:', error);
+        // Fallback to localStorage
+        const savedEvents = localStorage.getItem('campus-events');
+        if (savedEvents) {
+          setEvents(JSON.parse(savedEvents));
+        } else {
+          setEvents(mockEvents.map((event, index) => ({
+            ...event,
+            id: `mock-${index}`,
+            qrCode: `${event.title.toLowerCase().replace(/\s+/g, '-')}-qr`
+          })));
+        }
+        setLoading(false);
+      }
+    );
+
+    return unsubscribe;
   }, []);
 
-  const addEvent = (eventData) => {
-    const newEvent = {
-      ...eventData,
-      id: Date.now().toString(),
-      attendees: [],
-      qrCode: `${eventData.title.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
+  const addEvent = async (eventData) => {
+    try {
+      const docRef = await addDoc(collection(db, 'events'), {
+        ...eventData,
+        attendees: [],
+        createdAt: new Date().toISOString()
+      });
+      
+      const newEvent = {
+        id: docRef.id,
+        ...eventData,
+        attendees: [],
+        qrCode: `${eventData.title.toLowerCase().replace(/\s+/g, '-')}-${docRef.id}`
+      };
+      
+      toast.success('Event created successfully!');
+      return newEvent;
+    } catch (error) {
+      console.error('Error adding event:', error);
+      // Fallback to local storage
+      const newEvent = {
+        ...eventData,
+        id: Date.now().toString(),
+        attendees: [],
+        qrCode: `${eventData.title.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
+      };
+      
+      const updatedEvents = [...events, newEvent];
+      setEvents(updatedEvents);
+      localStorage.setItem('campus-events', JSON.stringify(updatedEvents));
+      toast.success('Event created successfully (offline mode)!');
+      return newEvent;
+    }
+  };
+
+  const updateEvent = async (eventId, updates) => {
+    try {
+      await updateDoc(doc(db, 'events', eventId), updates);
+      toast.success('Event updated successfully!');
+    } catch (error) {
+      console.error('Error updating event:', error);
+      // Fallback to local update
+      const updatedEvents = events.map(event => 
+        event.id === eventId ? { ...event, ...updates } : event
+      );
+      setEvents(updatedEvents);
+      localStorage.setItem('campus-events', JSON.stringify(updatedEvents));
+      toast.success('Event updated successfully (offline mode)!');
+    }
+  };
+
+  const deleteEvent = async (eventId) => {
+    try {
+      await deleteDoc(doc(db, 'events', eventId));
+      toast.success('Event deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      // Fallback to local deletion
+      const updatedEvents = events.filter(event => event.id !== eventId);
+      setEvents(updatedEvents);
+      localStorage.setItem('campus-events', JSON.stringify(updatedEvents));
+      toast.success('Event deleted successfully (offline mode)!');
+    }
+  };
+
+  const registerForEvent = async (eventId, userId) => {
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
+
+    const isAlreadyRegistered = event.attendees.some(attendee => attendee.userId === userId);
+    if (isAlreadyRegistered) {
+      toast.error('You are already registered for this event!');
+      return;
+    }
+
+    if (event.attendees.length >= event.maxAttendees) {
+      toast.error('This event is full!');
+      return;
+    }
+
+    const newAttendee = {
+      userId,
+      registeredAt: new Date().toISOString(),
+      attended: false
     };
-    
-    const updatedEvents = [...events, newEvent];
-    setEvents(updatedEvents);
-    localStorage.setItem('campus-events', JSON.stringify(updatedEvents));
-    return newEvent;
+
+    const updatedAttendees = [...event.attendees, newAttendee];
+
+    try {
+      await updateDoc(doc(db, 'events', eventId), {
+        attendees: updatedAttendees
+      });
+      toast.success('Successfully registered for the event!');
+    } catch (error) {
+      console.error('Error registering for event:', error);
+      // Fallback to local update
+      const updatedEvents = events.map(event => 
+        event.id === eventId 
+          ? { ...event, attendees: updatedAttendees }
+          : event
+      );
+      setEvents(updatedEvents);
+      localStorage.setItem('campus-events', JSON.stringify(updatedEvents));
+      toast.success('Successfully registered for the event (offline mode)!');
+    }
   };
 
-  const updateEvent = (eventId, updates) => {
-    const updatedEvents = events.map(event => 
-      event.id === eventId ? { ...event, ...updates } : event
+  const markAttendance = async (eventId, userId) => {
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
+
+    const updatedAttendees = event.attendees.map(attendee => 
+      attendee.userId === userId 
+        ? { ...attendee, attended: true, attendedAt: new Date().toISOString() }
+        : attendee
     );
-    setEvents(updatedEvents);
-    localStorage.setItem('campus-events', JSON.stringify(updatedEvents));
-  };
 
-  const deleteEvent = (eventId) => {
-    const updatedEvents = events.filter(event => event.id !== eventId);
-    setEvents(updatedEvents);
-    localStorage.setItem('campus-events', JSON.stringify(updatedEvents));
-  };
-
-  const registerForEvent = (eventId, userId) => {
-    const updatedEvents = events.map(event => {
-      if (event.id === eventId) {
-        const isAlreadyRegistered = event.attendees.some(attendee => attendee.userId === userId);
-        if (!isAlreadyRegistered && event.attendees.length < event.maxAttendees) {
-          return {
-            ...event,
-            attendees: [...event.attendees, {
-              userId,
-              registeredAt: new Date().toISOString(),
-              attended: false
-            }]
-          };
-        }
-      }
-      return event;
-    });
-    
-    setEvents(updatedEvents);
-    localStorage.setItem('campus-events', JSON.stringify(updatedEvents));
-  };
-
-  const markAttendance = (eventId, userId) => {
-    const updatedEvents = events.map(event => {
-      if (event.id === eventId) {
-        return {
-          ...event,
-          attendees: event.attendees.map(attendee => 
-            attendee.userId === userId 
-              ? { ...attendee, attended: true, attendedAt: new Date().toISOString() }
-              : attendee
-          )
-        };
-      }
-      return event;
-    });
-    
-    setEvents(updatedEvents);
-    localStorage.setItem('campus-events', JSON.stringify(updatedEvents));
+    try {
+      await updateDoc(doc(db, 'events', eventId), {
+        attendees: updatedAttendees
+      });
+      toast.success('Attendance marked successfully!');
+    } catch (error) {
+      console.error('Error marking attendance:', error);
+      // Fallback to local update
+      const updatedEvents = events.map(event => 
+        event.id === eventId 
+          ? { ...event, attendees: updatedAttendees }
+          : event
+      );
+      setEvents(updatedEvents);
+      localStorage.setItem('campus-events', JSON.stringify(updatedEvents));
+      toast.success('Attendance marked successfully (offline mode)!');
+    }
   };
 
   const value = {
