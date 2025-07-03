@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 const Header = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUserData } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -23,7 +23,7 @@ const Header = () => {
   const navItems = [
     { path: '/', icon: Home, label: 'Dashboard' },
     { path: '/events', icon: Calendar, label: 'Events' },
-    { path: '/create-event', icon: Plus, label: 'Create Event' },
+    ...(user?.role === 'organizer' ? [{ path: '/create-event', icon: Plus, label: 'Create Event' }] : []),
   ];
 
   return (
@@ -67,15 +67,39 @@ const Header = () => {
               <Bell className="w-5 h-5" />
             </button>
             
+            {/* Temporary refresh button for debugging */}
+            <button 
+              onClick={refreshUserData}
+              className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded"
+              title="Refresh user data"
+            >
+              Refresh
+            </button>
+            
             <div className="flex items-center space-x-2">
               <img
                 src={user?.avatar}
                 alt={user?.name}
                 className="w-8 h-8 rounded-full"
               />
-              <span className="text-sm font-medium text-gray-700 hidden sm:block">
-                {user?.name}
-              </span>
+              <div className="hidden sm:block">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-medium text-gray-700">
+                    {user?.name}
+                  </span>
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                    user?.role === 'organizer' 
+                      ? 'bg-green-100 text-green-700' 
+                      : 'bg-blue-100 text-blue-700'
+                  }`}>
+                    {user?.role === 'organizer' ? 'Organizer' : 'Student'}
+                  </span>
+                </div>
+                {/* Debug info - remove in production */}
+                <div className="text-xs text-gray-400">
+                  ID: {user?.id?.slice(0, 8)}... | Role: {user?.role}
+                </div>
+              </div>
             </div>
 
             <Link

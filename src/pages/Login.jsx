@@ -10,12 +10,13 @@ const Login = () => {
   const [name, setName] = useState('');
   const [studentId, setStudentId] = useState('');
   const [organizationName, setOrganizationName] = useState('');
+  const [organizerCode, setOrganizerCode] = useState('');
   const [role, setRole] = useState('student');
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { login, signup } = useAuth();
+  const { login, signup, refreshUserData } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -56,6 +57,11 @@ const Login = () => {
           setIsLoading(false);
           return;
         }
+        if (role === 'organizer' && organizerCode !== 'Hello1') {
+          toast.error('Invalid organizer code. Please contact administration for the correct code.');
+          setIsLoading(false);
+          return;
+        }
         if (password !== confirmPassword) {
           toast.error('Passwords do not match!');
           setIsLoading(false);
@@ -73,9 +79,16 @@ const Login = () => {
           ...(role === 'student' ? { studentId: studentId.trim() } : { organizationName: organizationName.trim() })
         };
         
+        console.log('Signup attempt with data:', additionalData);
         await signup(email, password, additionalData);
+        
+        // Force refresh user data to ensure role is correctly loaded
+        setTimeout(async () => {
+          await refreshUserData();
+        }, 500);
+        
         toast.success(`Account created successfully! Welcome to Campus Engage as ${role === 'student' ? 'a student' : 'an organizer'}!`);
-        console.log('Signup successful for:', email);
+        console.log('Signup successful for:', email, 'with role:', role);
       } else {
         await login(email, password);
         toast.success('Welcome back to Campus Engage!');
@@ -227,12 +240,12 @@ const Login = () => {
                               role === 'organizer' 
                                 ? 'border-primary-500 bg-primary-50' 
                                 : 'border-gray-300 bg-white hover:border-gray-400'
-                            }`}>
-                              <div className="text-center">
-                                <Calendar className="w-6 h-6 mx-auto mb-2 text-primary-600" />
-                                <div className="font-medium text-gray-900">Organizer</div>
-                                <div className="text-xs text-gray-500">Create & manage events</div>
-                              </div>
+                            }`}>                            <div className="text-center">
+                              <Calendar className="w-6 h-6 mx-auto mb-2 text-primary-600" />
+                              <div className="font-medium text-gray-900">Organizer</div>
+                              <div className="text-xs text-gray-500">Create & manage events</div>
+                              <div className="text-xs text-orange-600 mt-1">Requires access code</div>
+                            </div>
                             </div>
                           </label>
                         </div>
@@ -267,18 +280,36 @@ const Login = () => {
                           />
                         </div>
                       ) : (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Organization/Department *
-                          </label>
-                          <input
-                            type="text"
-                            value={organizationName}
-                            onChange={(e) => setOrganizationName(e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                            placeholder="Computer Science Department"
-                            required
-                          />
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Organization/Department *
+                            </label>
+                            <input
+                              type="text"
+                              value={organizationName}
+                              onChange={(e) => setOrganizationName(e.target.value)}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                              placeholder="Computer Science Department"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Organizer Access Code *
+                            </label>
+                            <input
+                              type="password"
+                              value={organizerCode}
+                              onChange={(e) => setOrganizerCode(e.target.value)}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                              placeholder="Enter organizer access code"
+                              required
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Contact administration for the organizer access code
+                            </p>
+                          </div>
                         </div>
                       )}
                     </>
@@ -377,6 +408,7 @@ const Login = () => {
                         setName('');
                         setStudentId('');
                         setOrganizationName('');
+                        setOrganizerCode('');
                         setRole('student');
                       }}
                       className="ml-2 text-primary-600 hover:text-primary-700 font-medium"
@@ -387,20 +419,38 @@ const Login = () => {
                 </div>
 
                 {!isSignUp && (
-                  <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-2">Demo Account:</p>
-                    <p className="text-xs text-gray-500">Email: demo@university.edu</p>
-                    <p className="text-xs text-gray-500">Password: demo123</p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEmail('demo@university.edu');
-                        setPassword('demo123');
-                      }}
-                      className="mt-2 text-xs text-primary-600 hover:text-primary-700 font-medium"
-                    >
-                      Use Demo Credentials
-                    </button>
+                  <div className="mt-8 space-y-4">
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <p className="text-sm text-gray-600 mb-2">Demo Student Account:</p>
+                      <p className="text-xs text-gray-500">Email: demo@university.edu</p>
+                      <p className="text-xs text-gray-500">Password: demo123</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEmail('demo@university.edu');
+                          setPassword('demo123');
+                        }}
+                        className="mt-2 text-xs text-primary-600 hover:text-primary-700 font-medium"
+                      >
+                        Use Demo Student Credentials
+                      </button>
+                    </div>
+                    
+                    <div className="p-4 bg-green-50 rounded-lg">
+                      <p className="text-sm text-gray-600 mb-2">Demo Organizer Account:</p>
+                      <p className="text-xs text-gray-500">Email: organizer@university.edu</p>
+                      <p className="text-xs text-gray-500">Password: demo123</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEmail('organizer@university.edu');
+                          setPassword('demo123');
+                        }}
+                        className="mt-2 text-xs text-green-600 hover:text-green-700 font-medium"
+                      >
+                        Use Demo Organizer Credentials
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

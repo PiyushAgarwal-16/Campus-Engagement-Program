@@ -1,34 +1,17 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useEvents } from '../contexts/EventContext';
 import { useAuth } from '../contexts/AuthContext';
 import { ArrowLeft, Calendar, Clock, MapPin, Users, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const CreateEvent = () => {
+const EditEvent = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { addEvent } = useEvents();
+  const { events, updateEvent, canModifyEvent } = useEvents();
   const { user } = useAuth();
   
-  // Check if user is an organizer
-  if (!user || user.role !== 'organizer') {
-    return (
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-          <h2 className="text-xl font-bold text-red-800 mb-2">Access Denied</h2>
-          <p className="text-red-600 mb-4">
-            Only organizers can create events. Please contact an administrator if you need organizer access.
-          </p>
-          <button
-            onClick={() => navigate('/events')}
-            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
-          >
-            Back to Events
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const event = events.find(e => e.id === id);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -45,6 +28,59 @@ const CreateEvent = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const categories = ['Academic', 'Sports', 'Cultural', 'Social', 'Workshop', 'Study Group'];
+
+  useEffect(() => {
+    if (event) {
+      setFormData({
+        title: event.title || '',
+        description: event.description || '',
+        date: event.date || '',
+        time: event.time || '',
+        endTime: event.endTime || '',
+        location: event.location || '',
+        category: event.category || 'Academic',
+        maxAttendees: event.maxAttendees || 50,
+        isPublic: event.isPublic !== undefined ? event.isPublic : true
+      });
+    }
+  }, [event]);
+
+  // Check if event exists and user can modify it
+  if (!event) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+          <h2 className="text-xl font-bold text-red-800 mb-2">Event Not Found</h2>
+          <p className="text-red-600 mb-4">The event you're trying to edit doesn't exist.</p>
+          <button
+            onClick={() => navigate('/events')}
+            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+          >
+            Back to Events
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canModifyEvent(event, user?.id, user?.role)) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+          <h2 className="text-xl font-bold text-red-800 mb-2">Access Denied</h2>
+          <p className="text-red-600 mb-4">
+            You can only edit events that you created. This event was created by {event.organizer}.
+          </p>
+          <button
+            onClick={() => navigate(`/events/${event.id}`)}
+            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+          >
+            Back to Event
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -79,11 +115,11 @@ const CreateEvent = () => {
         throw new Error('Event location is required');
       }
 
-      // Check if date is in the future
+      // Check if date is in the future (only if changing to a different date)
       const eventDateTime = new Date(`${formData.date}T${formData.time}`);
       const eventEndDateTime = new Date(`${formData.date}T${formData.endTime}`);
       
-      if (eventDateTime <= new Date()) {
+      if (eventDateTime <= new Date() && formData.date !== event.date) {
         throw new Error('Event date and time must be in the future');
       }
       
@@ -91,18 +127,20 @@ const CreateEvent = () => {
         throw new Error('End time must be after start time');
       }
 
+      // Check if reducing max attendees below current registrations
+      if (parseInt(formData.maxAttendees) < event.attendees.length) {
+        throw new Error(`Cannot reduce max attendees below current registrations (${event.attendees.length})`);
+      }
+
       const eventData = {
         ...formData,
-        organizer: user.name || user.email,
-        organizerId: user.id,
-        createdAt: new Date().toISOString(),
         maxAttendees: parseInt(formData.maxAttendees)
       };
 
-      const newEvent = addEvent(eventData);
+      await updateEvent(event.id, eventData, user.id);
       
-      toast.success('Event created successfully!');
-      navigate(`/events/${newEvent.id}`);
+      toast.success('Event updated successfully!');
+      navigate(`/events/${event.id}`);
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -115,12 +153,12 @@ const CreateEvent = () => {
       {/* Header */}
       <div className="flex items-center space-x-4">
         <button
-          onClick={() => navigate('/events')}
+          onClick={() => navigate(`/events/${event.id}`)}
           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">Create New Event</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Edit Event</h1>
       </div>
 
       {/* Form */}
@@ -170,12 +208,10 @@ const CreateEvent = () => {
                 name="date"
                 value={formData.date}
                 onChange={handleChange}
-                min={new Date().toISOString().split('T')[0]}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 required
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Clock className="w-4 h-4 inline mr-1" />
@@ -190,7 +226,6 @@ const CreateEvent = () => {
                 required
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Clock className="w-4 h-4 inline mr-1" />
@@ -218,7 +253,7 @@ const CreateEvent = () => {
               name="location"
               value={formData.location}
               onChange={handleChange}
-              placeholder="Event location..."
+              placeholder="Enter event location..."
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               required
             />
@@ -228,116 +263,77 @@ const CreateEvent = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Category
+                Category *
               </label>
               <select
                 name="category"
                 value={formData.category}
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                required
               >
                 {categories.map(category => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
+                  <option key={category} value={category}>{category}</option>
                 ))}
               </select>
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Users className="w-4 h-4 inline mr-1" />
-                Max Attendees
+                Max Attendees *
               </label>
               <input
                 type="number"
                 name="maxAttendees"
                 value={formData.maxAttendees}
                 onChange={handleChange}
-                min="1"
+                min={event.attendees.length}
                 max="1000"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                required
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Current registrations: {event.attendees.length}
+              </p>
             </div>
           </div>
 
-          {/* Public/Private */}
-          <div>
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                name="isPublic"
-                id="isPublic"
-                checked={formData.isPublic}
-                onChange={handleChange}
-                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-              />
-              <label htmlFor="isPublic" className="ml-2 text-sm text-gray-700">
-                Make this event public (visible to all students)
-              </label>
-            </div>
+          {/* Public Event Toggle */}
+          <div className="flex items-center space-x-3">
+            <input
+              type="checkbox"
+              name="isPublic"
+              id="isPublic"
+              checked={formData.isPublic}
+              onChange={handleChange}
+              className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+            />
+            <label htmlFor="isPublic" className="text-sm font-medium text-gray-700">
+              Make this event public (visible to all users)
+            </label>
           </div>
 
-          {/* Submit Buttons */}
-          <div className="flex items-center justify-end space-x-4 pt-6 border-t">
+          {/* Submit Button */}
+          <div className="flex space-x-4">
             <button
               type="button"
-              onClick={() => navigate('/events')}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              onClick={() => navigate(`/events/${event.id}`)}
+              className="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-primary-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Creating...' : 'Create Event'}
+              {isSubmitting ? 'Updating...' : 'Update Event'}
             </button>
           </div>
         </form>
-      </div>
-
-      {/* Preview */}
-      <div className="bg-gray-50 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Preview</h3>
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <div className="flex items-start justify-between mb-3">
-            <span className="px-2 py-1 bg-primary-100 text-primary-700 text-xs rounded-full">
-              {formData.category}
-            </span>
-          </div>
-          
-          <h4 className="font-semibold text-gray-900 mb-2">
-            {formData.title || 'Event Title'}
-          </h4>
-          
-          <p className="text-gray-600 text-sm mb-3">
-            {formData.description || 'Event description will appear here...'}
-          </p>
-          
-          <div className="space-y-2 text-sm text-gray-500">
-            <div className="flex items-center">
-              <Calendar className="w-4 h-4 mr-2" />
-              <span>{formData.date || 'Date not set'}</span>
-            </div>
-            <div className="flex items-center">
-              <Clock className="w-4 h-4 mr-2" />
-              <span>{formData.time || 'Time not set'}</span>
-            </div>
-            <div className="flex items-center">
-              <MapPin className="w-4 h-4 mr-2" />
-              <span>{formData.location || 'Location not set'}</span>
-            </div>
-            <div className="flex items-center">
-              <Users className="w-4 h-4 mr-2" />
-              <span>0/{formData.maxAttendees} registered</span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
 };
 
-export default CreateEvent;
+export default EditEvent;

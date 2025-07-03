@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEvents } from '../contexts/EventContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,7 +10,8 @@ import {
   ArrowLeft,
   QrCode,
   Share2,
-  Edit
+  Edit,
+  Trash2
 } from 'lucide-react';
 import QRCode from 'qrcode.react';
 import toast from 'react-hot-toast';
@@ -19,8 +20,9 @@ import AttendeeList from '../components/AttendeeList';
 const EventDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { events, registerForEvent } = useEvents();
+  const { events, registerForEvent, canModifyEvent, deleteEvent } = useEvents();
   const { user } = useAuth();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const event = events.find(e => e.id === id);
 
@@ -47,6 +49,27 @@ const EventDetails = () => {
   const handleRegister = () => {
     registerForEvent(event.id, user);
     toast.success('Successfully registered for the event!');
+  };
+
+  const handleEdit = () => {
+    navigate(`/edit-event/${event.id}`);
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteEvent(event.id, user.id);
+      navigate('/events');
+    } catch (error) {
+      // Error is already handled in the deleteEvent function
+    }
+  };
+
+  const confirmDelete = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(false);
   };
 
   const handleShare = () => {
@@ -90,12 +113,28 @@ const EventDetails = () => {
                 <button
                   onClick={handleShare}
                   className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                  title="Share event"
                 >
                   <Share2 className="w-5 h-5" />
                 </button>
-                <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                  <Edit className="w-5 h-5" />
-                </button>
+                {canModifyEvent(event, user?.id, user?.role) && (
+                  <>
+                    <button 
+                      onClick={handleEdit}
+                      className="p-2 text-gray-400 hover:text-primary-600 transition-colors"
+                      title="Edit event"
+                    >
+                      <Edit className="w-5 h-5" />
+                    </button>
+                    <button 
+                      onClick={confirmDelete}
+                      className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                      title="Delete event"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -234,6 +273,32 @@ const EventDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Event</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete "{event.title}"? This action cannot be undone.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={cancelDelete}
+                className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -84,13 +84,15 @@ const Events = () => {
           <h1 className="text-3xl font-bold text-gray-900">Campus Events</h1>
           <p className="text-gray-600 mt-1">Discover and join amazing events happening around campus</p>
         </div>
-        <Link
-          to="/create-event"
-          className="mt-4 sm:mt-0 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors flex items-center space-x-2"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Create Event</span>
-        </Link>
+        {user?.role === 'organizer' && (
+          <Link
+            to="/create-event"
+            className="mt-4 sm:mt-0 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors flex items-center space-x-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Create Event</span>
+          </Link>
+        )}
       </div>
 
       {/* Filters */}

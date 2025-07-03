@@ -36,7 +36,8 @@ export const EventProvider = ({ children }) => {
       time: '09:00',
       endTime: '17:00',
       location: 'Main Auditorium',
-      organizer: 'Computer Science Department',
+      organizer: 'Demo Organizer',
+      organizerId: 'demo-organizer-123',
       category: 'Academic',
       attendees: [],
       maxAttendees: 200,
@@ -51,6 +52,7 @@ export const EventProvider = ({ children }) => {
       endTime: '19:00',
       location: 'Sports Complex',
       organizer: 'Sports Committee',
+      organizerId: 'demo-organizer-2',
       category: 'Sports',
       attendees: [],
       maxAttendees: 500,
@@ -65,6 +67,7 @@ export const EventProvider = ({ children }) => {
       endTime: '16:00',
       location: 'Library Room 204',
       organizer: 'CS Study Group',
+      organizerId: 'demo-organizer-3',
       category: 'Study Group',
       attendees: [],
       maxAttendees: 25,
@@ -167,34 +170,84 @@ export const EventProvider = ({ children }) => {
     }
   };
 
-  const updateEvent = async (eventId, updates) => {
+  const updateEvent = async (eventId, updates, currentUserId) => {
     try {
-      await updateDoc(doc(db, 'events', eventId), updates);
+      // Find the event to check ownership
+      const event = events.find(e => e.id === eventId);
+      if (!event) {
+        throw new Error('Event not found');
+      }
+      
+      // Check if user is the organizer of this event
+      if (event.organizerId !== currentUserId) {
+        throw new Error('You can only edit events you created');
+      }
+      
+      await updateDoc(doc(db, 'events', eventId), {
+        ...updates,
+        updatedAt: new Date().toISOString()
+      });
       toast.success('Event updated successfully!');
     } catch (error) {
       console.error('Error updating event:', error);
-      // Fallback to local update
-      const updatedEvents = events.map(event => 
-        event.id === eventId ? { ...event, ...updates } : event
-      );
-      setEvents(updatedEvents);
-      localStorage.setItem('campus-events', JSON.stringify(updatedEvents));
-      toast.success('Event updated successfully (offline mode)!');
+      if (error.message.includes('You can only edit')) {
+        toast.error(error.message);
+        return;
+      }
+      
+      // Fallback to local update only if user owns the event
+      const event = events.find(e => e.id === eventId);
+      if (event && event.organizerId === currentUserId) {
+        const updatedEvents = events.map(event => 
+          event.id === eventId ? { ...event, ...updates, updatedAt: new Date().toISOString() } : event
+        );
+        setEvents(updatedEvents);
+        localStorage.setItem('campus-events', JSON.stringify(updatedEvents));
+        toast.success('Event updated successfully (offline mode)!');
+      } else {
+        toast.error('You can only edit events you created');
+      }
     }
   };
 
-  const deleteEvent = async (eventId) => {
+  const deleteEvent = async (eventId, currentUserId) => {
     try {
+      // Find the event to check ownership
+      const event = events.find(e => e.id === eventId);
+      if (!event) {
+        throw new Error('Event not found');
+      }
+      
+      // Check if user is the organizer of this event
+      if (event.organizerId !== currentUserId) {
+        throw new Error('You can only delete events you created');
+      }
+      
       await deleteDoc(doc(db, 'events', eventId));
       toast.success('Event deleted successfully!');
     } catch (error) {
       console.error('Error deleting event:', error);
-      // Fallback to local deletion
-      const updatedEvents = events.filter(event => event.id !== eventId);
-      setEvents(updatedEvents);
-      localStorage.setItem('campus-events', JSON.stringify(updatedEvents));
-      toast.success('Event deleted successfully (offline mode)!');
+      if (error.message.includes('You can only delete')) {
+        toast.error(error.message);
+        return;
+      }
+      
+      // Fallback to local deletion only if user owns the event
+      const event = events.find(e => e.id === eventId);
+      if (event && event.organizerId === currentUserId) {
+        const updatedEvents = events.filter(event => event.id !== eventId);
+        setEvents(updatedEvents);
+        localStorage.setItem('campus-events', JSON.stringify(updatedEvents));
+        toast.success('Event deleted successfully (offline mode)!');
+      } else {
+        toast.error('You can only delete events you created');
+      }
     }
+  };
+
+  // Check if user can edit/delete an event
+  const canModifyEvent = (event, currentUserId, currentUserRole) => {
+    return currentUserRole === 'organizer' && event.organizerId === currentUserId;
   };
 
   const registerForEvent = async (eventId, userObj) => {
@@ -283,7 +336,8 @@ export const EventProvider = ({ children }) => {
     updateEvent,
     deleteEvent,
     registerForEvent,
-    markAttendance
+    markAttendance,
+    canModifyEvent
   };
 
   return (

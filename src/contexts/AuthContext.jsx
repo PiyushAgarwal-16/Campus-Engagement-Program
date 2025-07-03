@@ -32,13 +32,14 @@ export const AuthProvider = ({ children }) => {
   const isAuthorizedUser = (user) => {
     if (!user) return false;
     
-    // Allow demo user
-    if (user.email === 'demo@university.edu' && user.id === 'demo-user-123') {
+    // Allow demo users
+    if ((user.email === 'demo@university.edu' && user.id === 'demo-user-123') ||
+        (user.email === 'organizer@university.edu' && user.id === 'demo-organizer-123')) {
       return true;
     }
     
     // Allow Firebase users (they have proper uid from Firebase)
-    if (user.id && user.id !== 'demo-user-123' && user.email) {
+    if (user.id && !user.id.startsWith('demo-') && user.email) {
       return true;
     }
     
@@ -50,8 +51,8 @@ export const AuthProvider = ({ children }) => {
     const demoUser = localStorage.getItem('demo-user');
     if (demoUser) {
       const userData = JSON.parse(demoUser);
-      // Only allow the specific demo account
-      if (userData.email === 'demo@university.edu') {
+      // Only allow the specific demo accounts
+      if (userData.email === 'demo@university.edu' || userData.email === 'organizer@university.edu') {
         setUser(userData);
         setLoading(false);
         return;
@@ -62,26 +63,68 @@ export const AuthProvider = ({ children }) => {
     }
 
     // Set up Firebase auth listener
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         console.log('Firebase user detected:', firebaseUser.email);
         
-        // Create user object with additional properties
-        const userData = {
-          id: firebaseUser.uid,
-          email: firebaseUser.email,
-          name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
-          role: 'student', // Default role
-          avatar: `https://ui-avatars.com/api/?name=${firebaseUser.email.split('@')[0]}&background=3b82f6&color=fff`
-        };
-        
-        // Validate the user before setting
-        if (isAuthorizedUser(userData)) {
-          setUser(userData);
-          console.log('Authorized Firebase user set:', userData.email);
-        } else {
-          console.log('Unauthorized Firebase user rejected:', userData.email);
-          setUser(null);
+        try {
+          // Small delay to ensure Firestore write is complete for new signups
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Fetch user profile from Firestore
+          const userDocRef = doc(db, 'users', firebaseUser.uid);
+          const userDoc = await getDoc(userDocRef);
+          
+          let userData;
+          if (userDoc.exists()) {
+            // User profile exists in Firestore
+            const profileData = userDoc.data();
+            userData = {
+              id: firebaseUser.uid,
+              email: firebaseUser.email,
+              name: profileData.name || firebaseUser.displayName || firebaseUser.email.split('@')[0],
+              role: profileData.role || 'student',
+              studentId: profileData.studentId || '',
+              organizationName: profileData.organizationName || '',
+              avatar: profileData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData.name || firebaseUser.email.split('@')[0])}&background=3b82f6&color=fff`
+            };
+            console.log('User profile loaded from Firestore:', userData.email, 'Role:', userData.role);
+          } else {
+            // Fallback for users without Firestore profile (shouldn't happen for new users)
+            userData = {
+              id: firebaseUser.uid,
+              email: firebaseUser.email,
+              name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+              role: 'student', // Default role
+              avatar: `https://ui-avatars.com/api/?name=${firebaseUser.email.split('@')[0]}&background=3b82f6&color=fff`
+            };
+            console.log('Using fallback user data for:', userData.email);
+          }
+          
+          // Validate the user before setting
+          if (isAuthorizedUser(userData)) {
+            setUser(userData);
+            console.log('Authorized Firebase user set:', userData.email, 'Role:', userData.role);
+          } else {
+            console.log('Unauthorized Firebase user rejected:', userData.email);
+            setUser(null);
+          }
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+          // Fallback user data
+          const userData = {
+            id: firebaseUser.uid,
+            email: firebaseUser.email,
+            name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+            role: 'student',
+            avatar: `https://ui-avatars.com/api/?name=${firebaseUser.email.split('@')[0]}&background=3b82f6&color=fff`
+          };
+          
+          if (isAuthorizedUser(userData)) {
+            setUser(userData);
+          } else {
+            setUser(null);
+          }
         }
       } else {
         console.log('No Firebase user detected');
@@ -105,8 +148,10 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.log('Firebase login failed:', error.code, error.message);
       
-      // ONLY allow demo account as fallback and ONLY for specific Firebase errors
-      const isDemoAccount = email === 'demo@university.edu' && password === 'demo123';
+      // ONLY allow demo accounts as fallback and ONLY for specific Firebase errors
+      const isDemoStudent = email === 'demo@university.edu' && password === 'demo123';
+      const isDemoOrganizer = email === 'organizer@university.edu' && password === 'demo123';
+      const isDemoAccount = isDemoStudent || isDemoOrganizer;
       const isFirebaseUnavailable = [
         'auth/network-request-failed',
         'auth/invalid-api-key',
@@ -118,17 +163,21 @@ export const AuthProvider = ({ children }) => {
         console.log('Using demo fallback due to Firebase unavailability');
         
         const mockUser = {
-          uid: 'demo-user-123',
+          uid: isDemoStudent ? 'demo-user-123' : 'demo-organizer-123',
           email: email,
-          displayName: 'Demo User'
+          displayName: isDemoStudent ? 'Demo Student' : 'Demo Organizer'
         };
         
         const userData = {
           id: mockUser.uid,
           email: mockUser.email,
           name: mockUser.displayName,
-          role: 'student',
-          avatar: `https://ui-avatars.com/api/?name=Demo+User&background=3b82f6&color=fff`
+          role: isDemoStudent ? 'student' : 'organizer',
+          ...(isDemoStudent 
+            ? { studentId: 'ST123456' }
+            : { organizationName: 'Computer Science Department' }
+          ),
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(mockUser.displayName)}&background=3b82f6&color=fff`
         };
         
         setUser(userData);
@@ -144,7 +193,7 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (email, password, additionalData = {}) => {
     try {
-      console.log('Attempting Firebase signup for:', email);
+      console.log('Attempting Firebase signup for:', email, 'as role:', additionalData.role);
       const result = await createUserWithEmailAndPassword(auth, email, password);
       console.log('Firebase signup successful for:', result.user.email);
       
@@ -178,6 +227,9 @@ export const AuthProvider = ({ children }) => {
       const userDocRef = doc(db, 'users', result.user.uid);
       await setDoc(userDocRef, userProfile);
       
+      // Immediately set the user in state with correct role to avoid timing issues
+      setUser(userProfile);
+      
       console.log('User profile created in Firestore:', userProfile);
       return result.user;
     } catch (error) {
@@ -187,6 +239,36 @@ export const AuthProvider = ({ children }) => {
       // This ensures only legitimate accounts are created
       throw error;
     }
+  };
+
+  // Function to refresh user data from Firestore
+  const refreshUserData = async () => {
+    if (auth.currentUser) {
+      try {
+        const userDocRef = doc(db, 'users', auth.currentUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (userDoc.exists()) {
+          const profileData = userDoc.data();
+          const userData = {
+            id: auth.currentUser.uid,
+            email: auth.currentUser.email,
+            name: profileData.name || auth.currentUser.displayName || auth.currentUser.email.split('@')[0],
+            role: profileData.role || 'student',
+            studentId: profileData.studentId || '',
+            organizationName: profileData.organizationName || '',
+            avatar: profileData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData.name || auth.currentUser.email.split('@')[0])}&background=3b82f6&color=fff`
+          };
+          
+          setUser(userData);
+          console.log('User data refreshed:', userData.email, 'Role:', userData.role);
+          return userData;
+        }
+      } catch (error) {
+        console.error('Error refreshing user data:', error);
+      }
+    }
+    return null;
   };
 
   // Function to update user profile
@@ -295,6 +377,7 @@ export const AuthProvider = ({ children }) => {
     signup,
     logout,
     updateUserProfile,
+    refreshUserData,
     loading
   };
 

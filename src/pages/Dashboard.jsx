@@ -36,23 +36,61 @@ const Dashboard = () => {
     
     setUpcomingEvents(upcoming);
 
-    // Calculate stats
-    const registered = events.filter(event => 
-      event.attendees.some(attendee => attendee.userId === user.id)
-    ).length;
-    
-    const attended = events.filter(event => 
-      event.attendees.some(attendee => attendee.userId === user.id && attendee.attended)
-    ).length;
+    // Calculate stats based on user role
+    if (user.role === 'organizer') {
+      // Stats for organizers - their created events
+      const createdEvents = events.filter(event => event.organizerId === user.id);
+      const totalAttendees = createdEvents.reduce((sum, event) => sum + event.attendees.length, 0);
+      const totalCapacity = createdEvents.reduce((sum, event) => sum + event.maxAttendees, 0);
+      
+      setStats({
+        totalEvents: createdEvents.length,
+        registeredEvents: totalAttendees,
+        attendedEvents: createdEvents.filter(event => 
+          event.attendees.some(attendee => attendee.attended)
+        ).length
+      });
+    } else {
+      // Stats for students - their registrations
+      const registered = events.filter(event => 
+        event.attendees.some(attendee => attendee.userId === user.id)
+      ).length;
+      
+      const attended = events.filter(event => 
+        event.attendees.some(attendee => attendee.userId === user.id && attendee.attended)
+      ).length;
 
-    setStats({
-      totalEvents: events.length,
-      registeredEvents: registered,
-      attendedEvents: attended
-    });
+      setStats({
+        totalEvents: events.length,
+        registeredEvents: registered,
+        attendedEvents: attended
+      });
+    }
   }, [events, user.id]);
 
-  const statCards = [
+  const statCards = user.role === 'organizer' ? [
+    {
+      title: 'Events Created',
+      value: stats.totalEvents,
+      icon: Calendar,
+      color: 'bg-blue-500',
+      change: '+12%'
+    },
+    {
+      title: 'Total Registrations',
+      value: stats.registeredEvents,
+      icon: Users,
+      color: 'bg-green-500',
+      change: '+8%'
+    },
+    {
+      title: 'Events with Attendance',
+      value: stats.attendedEvents,
+      icon: Star,
+      color: 'bg-purple-500',
+      change: '+15%'
+    }
+  ] : [
     {
       title: 'Total Events',
       value: stats.totalEvents,
@@ -86,16 +124,21 @@ const Dashboard = () => {
               Welcome back, {user?.name}! 👋
             </h1>
             <p className="text-primary-100">
-              Stay connected with campus life and never miss an event again.
+              {user.role === 'organizer' 
+                ? 'Manage your events and engage the campus community.'
+                : 'Stay connected with campus life and never miss an event again.'
+              }
             </p>
           </div>
-          <Link
-            to="/create-event"
-            className="bg-white text-primary-600 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center space-x-2"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create Event</span>
-          </Link>
+          {user.role === 'organizer' && (
+            <Link
+              to="/create-event"
+              className="bg-white text-primary-600 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center space-x-2"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create Event</span>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -123,6 +166,78 @@ const Dashboard = () => {
           );
         })}
       </div>
+
+      {/* My Events Section for Organizers */}
+      {user.role === 'organizer' && (
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-900">My Events</h2>
+            <Link
+              to="/create-event"
+              className="text-primary-600 text-sm font-medium hover:text-primary-700 flex items-center space-x-1"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create New</span>
+            </Link>
+          </div>
+
+          <div className="space-y-4">
+            {events
+              .filter(event => event.organizerId === user.id)
+              .slice(0, 5)
+              .map((event) => (
+                <Link
+                  key={event.id}
+                  to={`/events/${event.id}`}
+                  className="block p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:shadow-sm transition-all"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 mb-1">{event.title}</h3>
+                      <div className="flex items-center space-x-4 text-sm text-gray-500 mb-2">
+                        <div className="flex items-center space-x-1">
+                          <Calendar className="w-4 h-4" />
+                          <span>{new Date(event.date).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Clock className="w-4 h-4" />
+                          <span>{event.time} - {event.endTime || 'TBD'}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Users className="w-4 h-4" />
+                          <span>{event.attendees.length}/{event.maxAttendees}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Link
+                        to={`/edit-event/${event.id}`}
+                        className="p-1 text-gray-400 hover:text-primary-600 transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </Link>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            {events.filter(event => event.organizerId === user.id).length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p>You haven't created any events yet.</p>
+                <Link
+                  to="/create-event"
+                  className="text-primary-600 hover:text-primary-700 font-medium"
+                >
+                  Create your first event
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Upcoming Events */}
