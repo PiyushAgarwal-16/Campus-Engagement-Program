@@ -34,6 +34,7 @@ export const EventProvider = ({ children }) => {
       description: 'Annual technology symposium featuring latest innovations and research presentations.',
       date: '2025-07-15',
       time: '09:00',
+      endTime: '17:00',
       location: 'Main Auditorium',
       organizer: 'Computer Science Department',
       category: 'Academic',
@@ -47,6 +48,7 @@ export const EventProvider = ({ children }) => {
       description: 'Inter-college basketball tournament finals.',
       date: '2025-07-08',
       time: '16:00',
+      endTime: '19:00',
       location: 'Sports Complex',
       organizer: 'Sports Committee',
       category: 'Sports',
@@ -60,6 +62,7 @@ export const EventProvider = ({ children }) => {
       description: 'Weekly study group for data structures and algorithms.',
       date: '2025-07-05',
       time: '14:00',
+      endTime: '16:00',
       location: 'Library Room 204',
       organizer: 'CS Study Group',
       category: 'Study Group',
@@ -194,10 +197,11 @@ export const EventProvider = ({ children }) => {
     }
   };
 
-  const registerForEvent = async (eventId, userId) => {
+  const registerForEvent = async (eventId, userObj) => {
     const event = events.find(e => e.id === eventId);
     if (!event) return;
 
+    const userId = userObj.id || userObj.uid;
     const isAlreadyRegistered = event.attendees.some(attendee => attendee.userId === userId);
     if (isAlreadyRegistered) {
       toast.error('You are already registered for this event!');
@@ -211,6 +215,13 @@ export const EventProvider = ({ children }) => {
 
     const newAttendee = {
       userId,
+      userName: userObj.name || userObj.displayName || userObj.email?.split('@')[0] || 'Unknown User',
+      userEmail: userObj.email,
+      userRole: userObj.role || 'student',
+      ...(userObj.role === 'student' 
+        ? { userStudentId: userObj.studentId || '' }
+        : { userOrganization: userObj.organizationName || '' }
+      ),
       registeredAt: new Date().toISOString(),
       attended: false
     };

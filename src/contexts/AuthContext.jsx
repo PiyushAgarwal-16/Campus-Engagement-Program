@@ -3,9 +3,16 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  updateProfile
 } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { 
+  doc, 
+  setDoc, 
+  getDoc, 
+  updateDoc 
+} from 'firebase/firestore';
+import { auth, db } from '../config/firebase';
 
 const AuthContext = createContext();
 
@@ -135,17 +142,91 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const signup = async (email, password) => {
+  const signup = async (email, password, additionalData = {}) => {
     try {
       console.log('Attempting Firebase signup for:', email);
       const result = await createUserWithEmailAndPassword(auth, email, password);
       console.log('Firebase signup successful for:', result.user.email);
+      
+      // Update the user's display name in Firebase Auth
+      if (additionalData.name) {
+        await updateProfile(result.user, {
+          displayName: additionalData.name
+        });
+      }
+      
+      // Create user profile in Firestore
+      const userProfile = {
+        id: result.user.uid,
+        email: result.user.email,
+        name: additionalData.name || result.user.email.split('@')[0],
+        role: additionalData.role || 'student',
+        ...(additionalData.role === 'student' 
+          ? { studentId: additionalData.studentId || '' }
+          : { organizationName: additionalData.organizationName || '' }
+        ),
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(additionalData.name || result.user.email.split('@')[0])}&background=3b82f6&color=fff`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        preferences: {
+          notifications: true,
+          eventCategories: []
+        }
+      };
+      
+      // Save to Firestore
+      const userDocRef = doc(db, 'users', result.user.uid);
+      await setDoc(userDocRef, userProfile);
+      
+      console.log('User profile created in Firestore:', userProfile);
       return result.user;
     } catch (error) {
       console.log('Firebase signup failed:', error.code, error.message);
       
       // NO fallback for signup - must use real Firebase
       // This ensures only legitimate accounts are created
+      throw error;
+    }
+  };
+
+  // Function to update user profile
+  const updateUserProfile = async (updates) => {
+    if (!user) throw new Error('No user signed in');
+    
+    try {
+      console.log('Updating user profile:', updates);
+      
+      // Update in Firestore
+      const userDocRef = doc(db, 'users', user.id);
+      const updateData = {
+        ...updates,
+        updatedAt: new Date().toISOString()
+      };
+      
+      await updateDoc(userDocRef, updateData);
+      
+      // Update Firebase Auth display name if name is being updated
+      if (updates.name && auth.currentUser) {
+        await updateProfile(auth.currentUser, {
+          displayName: updates.name
+        });
+      }
+      
+      // Update local user state
+      const updatedUser = {
+        ...user,
+        ...updates,
+        avatar: updates.name ? 
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(updates.name)}&background=3b82f6&color=fff` :
+          user.avatar
+      };
+      
+      setUser(updatedUser);
+      console.log('Profile updated successfully:', updatedUser);
+      
+      return updatedUser;
+    } catch (error) {
+      console.error('Error updating profile:', error);
       throw error;
     }
   };
@@ -213,6 +294,7 @@ export const AuthProvider = ({ children }) => {
     login,
     signup,
     logout,
+    updateUserProfile,
     loading
   };
 

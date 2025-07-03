@@ -7,6 +7,10 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [name, setName] = useState('');
+  const [studentId, setStudentId] = useState('');
+  const [organizationName, setOrganizationName] = useState('');
+  const [role, setRole] = useState('student');
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -37,6 +41,21 @@ const Login = () => {
       
       if (isSignUp) {
         // Validation for sign up
+        if (!name.trim()) {
+          toast.error('Please enter your full name');
+          setIsLoading(false);
+          return;
+        }
+        if (role === 'student' && !studentId.trim()) {
+          toast.error('Please enter your student ID');
+          setIsLoading(false);
+          return;
+        }
+        if (role === 'organizer' && !organizationName.trim()) {
+          toast.error('Please enter your organization/department name');
+          setIsLoading(false);
+          return;
+        }
         if (password !== confirmPassword) {
           toast.error('Passwords do not match!');
           setIsLoading(false);
@@ -48,8 +67,14 @@ const Login = () => {
           return;
         }
         
-        await signup(email, password);
-        toast.success('Account created successfully! Welcome to Campus Engage!');
+        const additionalData = {
+          name: name.trim(),
+          role: role,
+          ...(role === 'student' ? { studentId: studentId.trim() } : { organizationName: organizationName.trim() })
+        };
+        
+        await signup(email, password, additionalData);
+        toast.success(`Account created successfully! Welcome to Campus Engage as ${role === 'student' ? 'a student' : 'an organizer'}!`);
         console.log('Signup successful for:', email);
       } else {
         await login(email, password);
@@ -160,6 +185,105 @@ const Login = () => {
                 </p>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {isSignUp && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Account Type *
+                        </label>
+                        <div className="grid grid-cols-2 gap-3">
+                          <label className="relative">
+                            <input
+                              type="radio"
+                              name="role"
+                              value="student"
+                              checked={role === 'student'}
+                              onChange={(e) => setRole(e.target.value)}
+                              className="sr-only"
+                            />
+                            <div className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                              role === 'student' 
+                                ? 'border-primary-500 bg-primary-50' 
+                                : 'border-gray-300 bg-white hover:border-gray-400'
+                            }`}>
+                              <div className="text-center">
+                                <Users className="w-6 h-6 mx-auto mb-2 text-primary-600" />
+                                <div className="font-medium text-gray-900">Student</div>
+                                <div className="text-xs text-gray-500">Register for events</div>
+                              </div>
+                            </div>
+                          </label>
+                          
+                          <label className="relative">
+                            <input
+                              type="radio"
+                              name="role"
+                              value="organizer"
+                              checked={role === 'organizer'}
+                              onChange={(e) => setRole(e.target.value)}
+                              className="sr-only"
+                            />
+                            <div className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                              role === 'organizer' 
+                                ? 'border-primary-500 bg-primary-50' 
+                                : 'border-gray-300 bg-white hover:border-gray-400'
+                            }`}>
+                              <div className="text-center">
+                                <Calendar className="w-6 h-6 mx-auto mb-2 text-primary-600" />
+                                <div className="font-medium text-gray-900">Organizer</div>
+                                <div className="text-xs text-gray-500">Create & manage events</div>
+                              </div>
+                            </div>
+                          </label>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Full Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          placeholder="John Doe"
+                          required
+                        />
+                      </div>
+
+                      {role === 'student' ? (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Student ID *
+                          </label>
+                          <input
+                            type="text"
+                            value={studentId}
+                            onChange={(e) => setStudentId(e.target.value)}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            placeholder="ST123456"
+                            required
+                          />
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Organization/Department *
+                          </label>
+                          <input
+                            type="text"
+                            value={organizationName}
+                            onChange={(e) => setOrganizationName(e.target.value)}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            placeholder="Computer Science Department"
+                            required
+                          />
+                        </div>
+                      )}
+                    </>
+                  )}
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Email Address *
@@ -250,6 +374,10 @@ const Login = () => {
                         setPassword('');
                         setConfirmPassword('');
                         setEmail('');
+                        setName('');
+                        setStudentId('');
+                        setOrganizationName('');
+                        setRole('student');
                       }}
                       className="ml-2 text-primary-600 hover:text-primary-700 font-medium"
                     >

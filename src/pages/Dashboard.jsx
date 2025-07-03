@@ -155,7 +155,7 @@ const Dashboard = () => {
                         </div>
                         <div className="flex items-center space-x-1">
                           <Clock className="w-4 h-4" />
-                          <span>{event.time}</span>
+                          <span>{event.time} - {event.endTime || 'TBD'}</span>
                         </div>
                         <div className="flex items-center space-x-1">
                           <MapPin className="w-4 h-4" />

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useEvents } from '../contexts/EventContext';
+import toast from 'react-hot-toast';
 import { 
   User, 
   Mail, 
@@ -13,14 +14,20 @@ import {
 } from 'lucide-react';
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, updateUserProfile } = useAuth();
   const { events } = useEvents();
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
+    studentId: user?.studentId || '',
+    organizationName: user?.organizationName || '',
+    role: user?.role || 'student',
     email: user?.email || '',
-    bio: 'Passionate student interested in technology and campus activities.',
-    interests: ['Technology', 'Sports', 'Academic Events']
+    bio: user?.bio || (user?.role === 'organizer' 
+      ? 'Passionate event organizer dedicated to creating engaging campus experiences.' 
+      : 'Passionate student interested in technology and campus activities.'),
+    interests: user?.interests || ['Technology', 'Sports', 'Academic Events']
   });
 
   // Calculate user statistics
@@ -34,9 +41,26 @@ const Profile = () => {
 
   const createdEvents = events.filter(event => event.organizerId === user?.id);
 
-  const handleSave = () => {
-    // In a real app, this would update the user profile in the database
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      setIsLoading(true);
+      await updateUserProfile({
+        name: profileData.name,
+        ...(profileData.role === 'student' 
+          ? { studentId: profileData.studentId }
+          : { organizationName: profileData.organizationName }
+        ),
+        bio: profileData.bio,
+        interests: profileData.interests
+      });
+      setIsEditing(false);
+      toast.success('Profile updated successfully!');
+    } catch (error) {
+      console.error('Profile update error:', error);
+      toast.error('Failed to update profile. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleChange = (e) => {
@@ -87,6 +111,34 @@ const Profile = () => {
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       />
                     </div>
+
+                    {profileData.role === 'student' ? (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Student ID
+                        </label>
+                        <input
+                          type="text"
+                          name="studentId"
+                          value={profileData.studentId}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        />
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Organization/Department
+                        </label>
+                        <input
+                          type="text"
+                          name="organizationName"
+                          value={profileData.organizationName}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        />
+                      </div>
+                    )}
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -97,7 +149,8 @@ const Profile = () => {
                         name="email"
                         value={profileData.email}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        disabled
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-not-allowed"
                       />
                     </div>
                     
@@ -116,9 +169,10 @@ const Profile = () => {
                     
                     <button
                       onClick={handleSave}
-                      className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+                      disabled={isLoading}
+                      className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
                     >
-                      Save Changes
+                      {isLoading ? 'Saving...' : 'Save Changes'}
                     </button>
                   </div>
                 ) : (
@@ -126,9 +180,27 @@ const Profile = () => {
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">
                       {profileData.name}
                     </h2>
-                    <div className="flex items-center text-gray-600 mb-3">
-                      <Mail className="w-4 h-4 mr-2" />
-                      <span>{profileData.email}</span>
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center text-gray-600">
+                        <Mail className="w-4 h-4 mr-2" />
+                        <span>{profileData.email}</span>
+                      </div>
+                      <div className="flex items-center text-gray-600">
+                        <Shield className="w-4 h-4 mr-2" />
+                        <span className="capitalize">{profileData.role}</span>
+                      </div>
+                      {profileData.role === 'student' && profileData.studentId && (
+                        <div className="flex items-center text-gray-600">
+                          <User className="w-4 h-4 mr-2" />
+                          <span>Student ID: {profileData.studentId}</span>
+                        </div>
+                      )}
+                      {profileData.role === 'organizer' && profileData.organizationName && (
+                        <div className="flex items-center text-gray-600">
+                          <User className="w-4 h-4 mr-2" />
+                          <span>Organization: {profileData.organizationName}</span>
+                        </div>
+                      )}
                     </div>
                     <p className="text-gray-600 mb-4">{profileData.bio}</p>
                     <div className="flex flex-wrap gap-2">

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import QRCode from 'qrcode.react';
 import toast from 'react-hot-toast';
+import AttendeeList from '../components/AttendeeList';
 
 const EventDetails = () => {
   const { id } = useParams();
@@ -37,12 +38,14 @@ const EventDetails = () => {
     );
   }
 
-  const isRegistered = event.attendees.some(attendee => attendee.userId === user.id);
+  const isRegistered = event.attendees.some(attendee => 
+    (attendee.userId || attendee.id) === user.id
+  );
   const availableSpots = event.maxAttendees - event.attendees.length;
   const isFull = availableSpots <= 0;
 
   const handleRegister = () => {
-    registerForEvent(event.id, user.id);
+    registerForEvent(event.id, user);
     toast.success('Successfully registered for the event!');
   };
 
@@ -105,7 +108,7 @@ const EventDetails = () => {
               </div>
               <div className="flex items-center text-gray-600">
                 <Clock className="w-5 h-5 mr-3" />
-                <span>{event.time}</span>
+                <span>{event.time} - {event.endTime || 'TBD'}</span>
               </div>
               <div className="flex items-center text-gray-600">
                 <MapPin className="w-5 h-5 mr-3" />
@@ -133,21 +136,7 @@ const EventDetails = () => {
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
               Attendees ({event.attendees.length})
             </h2>
-            
-            {event.attendees.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {event.attendees.map((attendee, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                      {attendee.userId.charAt(0).toUpperCase()}
-                    </div>
-                    <span className="text-sm text-gray-600">User {attendee.userId}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500">No attendees yet. Be the first to register!</p>
-            )}
+            <AttendeeList attendees={event.attendees} />
           </div>
         </div>
 

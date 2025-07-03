@@ -63,11 +63,13 @@ const Events = () => {
   }, [events, searchTerm, selectedCategory, dateFilter]);
 
   const handleRegister = (eventId) => {
-    registerForEvent(eventId, user.id);
+    registerForEvent(eventId, user);
   };
 
   const isRegistered = (event) => {
-    return event.attendees.some(attendee => attendee.userId === user.id);
+    return event.attendees.some(attendee => 
+      (attendee.userId || attendee.id) === user.id
+    );
   };
 
   const getAvailableSpots = (event) => {
@@ -173,7 +175,7 @@ const Events = () => {
                   </div>
                   <div className="flex items-center text-sm text-gray-500">
                     <Clock className="w-4 h-4 mr-2" />
-                    <span>{event.time}</span>
+                    <span>{event.time} - {event.endTime || 'TBD'}</span>
                   </div>
                   <div className="flex items-center text-sm text-gray-500">
                     <MapPin className="w-4 h-4 mr-2" />

@@ -15,6 +15,7 @@ const CreateEvent = () => {
     description: '',
     date: '',
     time: '',
+    endTime: '',
     location: '',
     category: 'Academic',
     maxAttendees: 50,
@@ -49,7 +50,10 @@ const CreateEvent = () => {
         throw new Error('Event date is required');
       }
       if (!formData.time) {
-        throw new Error('Event time is required');
+        throw new Error('Event start time is required');
+      }
+      if (!formData.endTime) {
+        throw new Error('Event end time is required');
       }
       if (!formData.location.trim()) {
         throw new Error('Event location is required');
@@ -57,8 +61,14 @@ const CreateEvent = () => {
 
       // Check if date is in the future
       const eventDateTime = new Date(`${formData.date}T${formData.time}`);
+      const eventEndDateTime = new Date(`${formData.date}T${formData.endTime}`);
+      
       if (eventDateTime <= new Date()) {
         throw new Error('Event date and time must be in the future');
+      }
+      
+      if (eventEndDateTime <= eventDateTime) {
+        throw new Error('End time must be after start time');
       }
 
       const eventData = {
@@ -129,7 +139,7 @@ const CreateEvent = () => {
           </div>
 
           {/* Date and Time */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Calendar className="w-4 h-4 inline mr-1" />
@@ -149,12 +159,27 @@ const CreateEvent = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Clock className="w-4 h-4 inline mr-1" />
-                Time *
+                Start Time *
               </label>
               <input
                 type="time"
                 name="time"
                 value={formData.time}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Clock className="w-4 h-4 inline mr-1" />
+                End Time *
+              </label>
+              <input
+                type="time"
+                name="endTime"
+                value={formData.endTime}
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 required
