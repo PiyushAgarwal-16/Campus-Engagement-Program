@@ -56,19 +56,28 @@ const EventDetails = () => {
   };
 
   const handleDelete = async () => {
+    console.log('handleDelete called');
+    console.log('Event ID:', event.id);
+    console.log('User ID:', user.id);
+    console.log('User role:', user.role);
+    
     try {
-      await deleteEvent(event.id, user.id);
+      await deleteEvent(event.id, user.id, user.role);
+      console.log('Delete successful, navigating to events');
       navigate('/events');
     } catch (error) {
-      // Error is already handled in the deleteEvent function
+      console.error('Delete failed:', error);
+      toast.error('Failed to delete event: ' + error.message);
     }
   };
 
   const confirmDelete = () => {
+    console.log('confirmDelete called - showing modal');
     setShowDeleteConfirm(true);
   };
 
   const cancelDelete = () => {
+    console.log('cancelDelete called - hiding modal');
     setShowDeleteConfirm(false);
   };
 

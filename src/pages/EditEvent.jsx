@@ -137,7 +137,7 @@ const EditEvent = () => {
         maxAttendees: parseInt(formData.maxAttendees)
       };
 
-      await updateEvent(event.id, eventData, user.id);
+      await updateEvent(event.id, eventData, user.id, user.role);
       
       toast.success('Event updated successfully!');
       navigate(`/events/${event.id}`);
