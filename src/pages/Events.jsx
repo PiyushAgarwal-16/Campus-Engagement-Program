@@ -24,12 +24,15 @@ const Events = () => {
   const filteredEvents = useMemo(() => {
     let filtered = events;
 
-    // Search filter
+    // Search filter (including tags)
     if (searchTerm) {
       filtered = filtered.filter(event =>
         event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        event.organizer.toLowerCase().includes(searchTerm.toLowerCase())
+        event.organizer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (event.tags && event.tags.some(tag => 
+          tag.toLowerCase().includes(searchTerm.toLowerCase())
+        ))
       );
     }
 
@@ -104,7 +107,7 @@ const Events = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Search events..."
+                placeholder="Search events, tags, organizers..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -143,6 +146,43 @@ const Events = () => {
         </div>
       </div>
 
+      {/* Popular Tags */}
+      {events.length > 0 && (() => {
+        // Get all tags from events and count their frequency
+        const tagCounts = {};
+        events.forEach(event => {
+          if (event.tags) {
+            event.tags.forEach(tag => {
+              tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+            });
+          }
+        });
+        
+        // Get top 10 most popular tags
+        const popularTags = Object.entries(tagCounts)
+          .sort(([,a], [,b]) => b - a)
+          .slice(0, 10)
+          .map(([tag, count]) => ({ tag, count }));
+          
+        return popularTags.length > 0 ? (
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Popular Tags</h3>
+            <div className="flex flex-wrap gap-2">
+              {popularTags.map(({ tag, count }) => (
+                <button
+                  key={tag}
+                  onClick={() => setSearchTerm(tag)}
+                  className="inline-flex items-center space-x-1 px-3 py-1 bg-gray-100 hover:bg-primary-100 text-gray-700 hover:text-primary-700 rounded-full text-sm transition-colors"
+                >
+                  <span>#{tag}</span>
+                  <span className="text-xs text-gray-500">({count})</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null;
+      })()}
+
       {/* Events Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredEvents.map((event) => {
@@ -169,6 +209,27 @@ const Events = () => {
                 <p className="text-gray-600 text-base mb-4 line-clamp-2">
                   {event.description}
                 </p>
+
+                {/* Tags */}
+                {event.tags && event.tags.length > 0 && (
+                  <div className="mb-4">
+                    <div className="flex flex-wrap gap-1">
+                      {event.tags.slice(0, 4).map((tag, index) => (
+                        <span 
+                          key={index}
+                          className="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded-md"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                      {event.tags.length > 4 && (
+                        <span className="inline-block px-2 py-1 text-xs bg-gray-200 text-gray-600 rounded-md">
+                          +{event.tags.length - 4} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center text-base text-gray-600">

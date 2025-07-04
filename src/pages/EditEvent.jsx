@@ -22,12 +22,53 @@ const EditEvent = () => {
     location: '',
     category: 'Academic',
     maxAttendees: 50,
-    isPublic: true
+    isPublic: true,
+    tags: []
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tagInput, setTagInput] = useState('');
 
   const categories = ['Academic', 'Sports', 'Cultural', 'Social', 'Workshop', 'Study Group'];
+  
+  // Predefined tag suggestions
+  const suggestedTags = [
+    'STEM', 'Programming', 'AI', 'Machine Learning', 'Data Science',
+    'Career Fair', 'Networking', 'Internship', 'Job Fair',
+    'Basketball', 'Soccer', 'Tennis', 'Swimming', 'Fitness',
+    'Music', 'Dance', 'Art', 'Theater', 'Photography',
+    'Food', 'Gaming', 'Movies', 'Community Service', 'Volunteer',
+    'Research', 'Conference', 'Seminar', 'Guest Speaker',
+    'Study Session', 'Group Project', 'Exam Prep',
+    'Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate',
+    'Free Food', 'Prizes', 'Competition', 'Awards'
+  ];
+
+  // Tag management functions
+  const addTag = (tag) => {
+    const trimmedTag = tag.trim();
+    if (trimmedTag && !formData.tags.includes(trimmedTag) && formData.tags.length < 10) {
+      setFormData(prev => ({
+        ...prev,
+        tags: [...prev.tags, trimmedTag]
+      }));
+    }
+    setTagInput('');
+  };
+
+  const removeTag = (tagToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      tags: prev.tags.filter(tag => tag !== tagToRemove)
+    }));
+  };
+
+  const handleTagKeyPress = (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addTag(tagInput);
+    }
+  };
 
   useEffect(() => {
     if (event) {
@@ -40,7 +81,8 @@ const EditEvent = () => {
         location: event.location || '',
         category: event.category || 'Academic',
         maxAttendees: event.maxAttendees || 50,
-        isPublic: event.isPublic !== undefined ? event.isPublic : true
+        isPublic: event.isPublic !== undefined ? event.isPublic : true,
+        tags: event.tags || []
       });
     }
   }, [event]);
@@ -295,6 +337,71 @@ const EditEvent = () => {
               <p className="text-xs text-gray-500 mt-1">
                 Current registrations: {event.attendees.length}
               </p>
+            </div>
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="inline-flex items-center">
+                🏷️ Tags
+                <span className="ml-2 text-xs text-gray-500">(Press Enter or comma to add)</span>
+              </span>
+            </label>
+            
+            {/* Current Tags */}
+            {formData.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {formData.tags.map((tag, index) => (
+                  <span 
+                    key={index}
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800 border border-primary-200"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => removeTag(tag)}
+                      className="ml-2 text-primary-600 hover:text-primary-800"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            
+            {/* Tag Input */}
+            <input
+              type="text"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyPress={handleTagKeyPress}
+              placeholder="Add tags (e.g., STEM, Networking, Free Food)..."
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              maxLength={30}
+            />
+            
+            {/* Suggested Tags */}
+            <div className="mt-3">
+              <p className="text-xs text-gray-500 mb-2">Suggested tags:</p>
+              <div className="flex flex-wrap gap-1">
+                {suggestedTags
+                  .filter(tag => !formData.tags.includes(tag))
+                  .slice(0, 15)
+                  .map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => addTag(tag)}
+                      className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 transition-colors"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+              </div>
+              {formData.tags.length >= 10 && (
+                <p className="text-xs text-amber-600 mt-2">Maximum 10 tags allowed</p>
+              )}
             </div>
           </div>
 

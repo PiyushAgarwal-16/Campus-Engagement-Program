@@ -263,7 +263,7 @@ const Dashboard = () => {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="font-semibold text-gray-900 mb-1">{event.title}</h3>
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
+                      <div className="flex items-center space-x-4 text-sm text-gray-500 mb-2">
                         <div className="flex items-center space-x-1">
                           <Calendar className="w-4 h-4" />
                           <span>{new Date(event.date).toLocaleDateString()}</span>
@@ -277,6 +277,24 @@ const Dashboard = () => {
                           <span>{event.location}</span>
                         </div>
                       </div>
+                      {/* Tags */}
+                      {event.tags && event.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {event.tags.slice(0, 3).map((tag, index) => (
+                            <span 
+                              key={index}
+                              className="inline-block px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded"
+                            >
+                              #{tag}
+                            </span>
+                          ))}
+                          {event.tags.length > 3 && (
+                            <span className="inline-block px-2 py-0.5 text-xs bg-gray-200 text-gray-500 rounded">
+                              +{event.tags.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <span className="px-3 py-1 bg-primary-100 text-primary-700 text-sm font-medium rounded-full">
                       {event.category}

@@ -11,11 +11,13 @@ import {
   QrCode,
   Share2,
   Edit,
-  Trash2
+  Trash2,
+  Scan
 } from 'lucide-react';
 import QRCode from 'qrcode.react';
 import toast from 'react-hot-toast';
 import AttendeeList from '../components/AttendeeList';
+import QRScanner from '../components/QRScanner';
 
 const EventDetails = () => {
   const { id } = useParams();
@@ -23,6 +25,7 @@ const EventDetails = () => {
   const { events, registerForEvent, canModifyEvent, deleteEvent } = useEvents();
   const { user } = useAuth();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showQRScanner, setShowQRScanner] = useState(false);
 
   const event = events.find(e => e.id === id);
 
@@ -149,6 +152,22 @@ const EventDetails = () => {
 
             <h1 className="text-3xl font-bold text-gray-900 mb-4">{event.title}</h1>
             
+            {/* Tags */}
+            {event.tags && event.tags.length > 0 && (
+              <div className="mb-6">
+                <div className="flex flex-wrap gap-2">
+                  {event.tags.map((tag, index) => (
+                    <span 
+                      key={index}
+                      className="inline-block px-3 py-1 text-sm font-medium bg-primary-100 text-primary-800 border border-primary-200 rounded-full"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="flex items-center text-gray-600">
                 <Calendar className="w-5 h-5 mr-3" />
@@ -235,20 +254,66 @@ const EventDetails = () => {
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <QrCode className="w-5 h-5 mr-2" />
-                Attendance QR Code
+                Your QR Code
               </h3>
               
               <div className="text-center">
-                <div className="bg-white p-4 rounded-lg border-2 border-gray-200 inline-block">
-                  <QRCode 
-                    value={qrCodeValue}
-                    size={150}
-                    level="M"
-                  />
-                </div>
-                <p className="text-base text-gray-600 mt-3">
-                  Scan this QR code at the event to mark your attendance
+                <p className="text-base text-gray-600 mb-4">
+                  Access your unique QR code for attendance
                 </p>
+                
+                {/* Debug info */}
+                {(() => {
+                  const currentAttendee = event.attendees.find(a => a.userId === (user?.id || user?.uid));
+                  return currentAttendee ? (
+                    <div className="bg-gray-50 rounded-lg p-3 mb-4 text-left">
+                      <p className="text-xs text-gray-600">Debug Info:</p>
+                      <p className="text-xs text-gray-500">User ID: {user?.id || user?.uid}</p>
+                      <p className="text-xs text-gray-500">
+                        QR Code: {currentAttendee.qrCode ? 
+                          <span className="text-green-600">Available</span> : 
+                          <span className="text-red-600">Missing</span>
+                        }
+                      </p>
+                      {currentAttendee.qrCode && (
+                        <p className="text-xs font-mono text-gray-400 break-all">
+                          {currentAttendee.qrCode}
+                        </p>
+                      )}
+                    </div>
+                  ) : null;
+                })()}
+                
+                <button
+                  onClick={() => navigate(`/qr-code/${event.id}`)}
+                  className="w-full bg-primary-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-primary-700 transition-colors flex items-center justify-center space-x-2"
+                >
+                  <QrCode className="w-5 h-5" />
+                  <span>View My QR Code</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* QR Scanner for Organizers */}
+          {user?.role === 'organizer' && (
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <Scan className="w-5 h-5 mr-2" />
+                Attendance Scanner
+              </h3>
+              
+              <div className="text-center">
+                <p className="text-base text-gray-600 mb-4">
+                  Scan attendee QR codes to mark attendance
+                </p>
+                <button
+                  onClick={() => setShowQRScanner(true)}
+                  className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
+                >
+                  <Scan className="w-5 h-5" />
+                  <span>Start QR Scanner</span>
+                </button>
               </div>
             </div>
           )}
@@ -282,6 +347,15 @@ const EventDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* QR Scanner Modal */}
+      {showQRScanner && (
+        <QRScanner
+          isOpen={showQRScanner}
+          onClose={() => setShowQRScanner(false)}
+          eventId={event.id}
+        />
+      )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (

@@ -24,6 +24,7 @@ const Header = () => {
     { path: '/', icon: Home, label: 'Dashboard' },
     { path: '/events', icon: Calendar, label: 'Events' },
     ...(user?.role === 'organizer' ? [{ path: '/create-event', icon: Plus, label: 'Create Event' }] : []),
+    { path: '/qr-test', icon: Calendar, label: 'QR Test' },
   ];
 
   return (
