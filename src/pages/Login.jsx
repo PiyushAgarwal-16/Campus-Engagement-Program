@@ -10,7 +10,6 @@ const Login = () => {
   const [name, setName] = useState('');
   const [studentId, setStudentId] = useState('');
   const [organizationName, setOrganizationName] = useState('');
-  const [organizerCode, setOrganizerCode] = useState('');
   const [role, setRole] = useState('student');
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
@@ -54,11 +53,6 @@ const Login = () => {
         }
         if (role === 'organizer' && !organizationName.trim()) {
           toast.error('Please enter your organization/department name');
-          setIsLoading(false);
-          return;
-        }
-        if (role === 'organizer' && organizerCode !== 'Hello1') {
-          toast.error('Invalid organizer code. Please contact administration for the correct code.');
           setIsLoading(false);
           return;
         }
@@ -244,7 +238,6 @@ const Login = () => {
                               <Calendar className="w-6 h-6 mx-auto mb-2 text-primary-600" />
                               <div className="font-medium text-gray-900">Organizer</div>
                               <div className="text-xs text-gray-500">Create & manage events</div>
-                              <div className="text-xs text-orange-600 mt-1">Requires access code</div>
                             </div>
                             </div>
                           </label>
@@ -280,36 +273,18 @@ const Login = () => {
                           />
                         </div>
                       ) : (
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Organization/Department *
-                            </label>
-                            <input
-                              type="text"
-                              value={organizationName}
-                              onChange={(e) => setOrganizationName(e.target.value)}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                              placeholder="Computer Science Department"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Organizer Access Code *
-                            </label>
-                            <input
-                              type="password"
-                              value={organizerCode}
-                              onChange={(e) => setOrganizerCode(e.target.value)}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                              placeholder="Enter organizer access code"
-                              required
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                              Contact administration for the organizer access code
-                            </p>
-                          </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Organization/Department *
+                          </label>
+                          <input
+                            type="text"
+                            value={organizationName}
+                            onChange={(e) => setOrganizationName(e.target.value)}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            placeholder="Computer Science Department"
+                            required
+                          />
                         </div>
                       )}
                     </>
@@ -408,7 +383,6 @@ const Login = () => {
                         setName('');
                         setStudentId('');
                         setOrganizationName('');
-                        setOrganizerCode('');
                         setRole('student');
                       }}
                       className="ml-2 text-primary-600 hover:text-primary-700 font-medium"
