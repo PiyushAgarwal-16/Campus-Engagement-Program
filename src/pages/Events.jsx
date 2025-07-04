@@ -154,10 +154,10 @@ const Events = () => {
             <div key={event.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
               <div className="p-6">
                 <div className="flex items-start justify-between mb-4">
-                  <span className="px-2 py-1 bg-primary-100 text-primary-700 text-xs rounded-full">
+                  <span className="px-3 py-1 bg-primary-100 text-primary-700 text-sm font-medium rounded-full">
                     {event.category}
                   </span>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-sm text-gray-500 font-medium">
                     {availableSpots} spots left
                   </span>
                 </div>
@@ -166,24 +166,24 @@ const Events = () => {
                   {event.title}
                 </h3>
                 
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                <p className="text-gray-600 text-base mb-4 line-clamp-2">
                   {event.description}
                 </p>
 
                 <div className="space-y-2 mb-4">
-                  <div className="flex items-center text-sm text-gray-500">
+                  <div className="flex items-center text-base text-gray-600">
                     <Calendar className="w-4 h-4 mr-2" />
                     <span>{new Date(event.date).toLocaleDateString()}</span>
                   </div>
-                  <div className="flex items-center text-sm text-gray-500">
+                  <div className="flex items-center text-base text-gray-600">
                     <Clock className="w-4 h-4 mr-2" />
                     <span>{event.time} - {event.endTime || 'TBD'}</span>
                   </div>
-                  <div className="flex items-center text-sm text-gray-500">
+                  <div className="flex items-center text-base text-gray-600">
                     <MapPin className="w-4 h-4 mr-2" />
                     <span>{event.location}</span>
                   </div>
-                  <div className="flex items-center text-sm text-gray-500">
+                  <div className="flex items-center text-base text-gray-600">
                     <Users className="w-4 h-4 mr-2" />
                     <span>{event.attendees.length}/{event.maxAttendees} registered</span>
                   </div>

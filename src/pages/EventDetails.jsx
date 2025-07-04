@@ -115,7 +115,7 @@ const EventDetails = () => {
           {/* Event Info */}
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
             <div className="flex items-start justify-between mb-4">
-              <span className="px-2 py-1 bg-primary-100 text-primary-700 text-xs rounded-full">
+              <span className="px-3 py-1 bg-primary-100 text-primary-700 text-sm font-medium rounded-full">
                 {event.category}
               </span>
               <div className="flex items-center space-x-2">
@@ -180,8 +180,8 @@ const EventDetails = () => {
           </div>
 
           {/* Attendees */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
               Attendees ({event.attendees.length})
             </h2>
             <AttendeeList attendees={event.attendees} />
@@ -195,7 +195,7 @@ const EventDetails = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Registration</h3>
             
             <div className="space-y-4">
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-base">
                 <span className="text-gray-600">Available spots:</span>
                 <span className="font-medium">{availableSpots}</span>
               </div>
@@ -246,7 +246,7 @@ const EventDetails = () => {
                     level="M"
                   />
                 </div>
-                <p className="text-sm text-gray-600 mt-3">
+                <p className="text-base text-gray-600 mt-3">
                   Scan this QR code at the event to mark your attendance
                 </p>
               </div>
@@ -258,21 +258,21 @@ const EventDetails = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Event Stats</h3>
             
             <div className="space-y-3">
-              <div className="flex justify-between">
+              <div className="flex justify-between text-base">
                 <span className="text-gray-600">Total Capacity:</span>
                 <span className="font-medium">{event.maxAttendees}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between text-base">
                 <span className="text-gray-600">Registered:</span>
                 <span className="font-medium">{event.attendees.length}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between text-base">
                 <span className="text-gray-600">Attended:</span>
                 <span className="font-medium">
                   {event.attendees.filter(a => a.attended).length}
                 </span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between text-base">
                 <span className="text-gray-600">Registration Rate:</span>
                 <span className="font-medium">
                   {Math.round((event.attendees.length / event.maxAttendees) * 100)}%

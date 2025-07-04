@@ -278,7 +278,7 @@ const Dashboard = () => {
                         </div>
                       </div>
                     </div>
-                    <span className="px-2 py-1 bg-primary-100 text-primary-700 text-xs rounded-full">
+                    <span className="px-3 py-1 bg-primary-100 text-primary-700 text-sm font-medium rounded-full">
                       {event.category}
                     </span>
                   </div>
