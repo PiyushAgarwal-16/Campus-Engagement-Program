@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import Header from './components/Header';
 import DebugPanel from './components/DebugPanel';
+import CameraTest from './components/CameraTest';
 import Dashboard from './pages/Dashboard';
 import Events from './pages/Events';
 import EventDetails from './pages/EventDetails';
@@ -50,6 +51,7 @@ function AppContent() {
       </main>
       <Toaster position="top-right" />
       <DebugPanel />
+      <CameraTest />
     </div>
   );
 }
