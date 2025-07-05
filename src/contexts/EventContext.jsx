@@ -12,6 +12,8 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import toast from 'react-hot-toast';
+import { isEventExpired, exportAttendeeData, downloadFile, generateExportFilename } from '../utils/exportUtils';
+import { ExpiredEventsService } from '../services/expiredEventsService';
 
 const EventContext = createContext();
 
@@ -38,7 +40,6 @@ export const EventProvider = ({ children }) => {
       async (snapshot) => {
         if (snapshot.empty) {
           // No events exist, start with empty array
-          console.log('No events found, starting with empty event list...');
           setEvents([]);
           localStorage.removeItem('campus-events'); // Clear any cached events
           setLoading(false);
@@ -109,6 +110,56 @@ export const EventProvider = ({ children }) => {
       }
     }
   }, [loading, events.length]); // Run when loading changes or when events are first loaded
+
+  // Check for expired events and process them
+  useEffect(() => {
+    const processExpiredEvents = async () => {
+      if (!loading && events.length > 0) {
+        const expiredEvents = events.filter(event => isEventExpired(event));
+        
+        if (expiredEvents.length > 0) {
+          console.log(`Found ${expiredEvents.length} expired events to process`);
+          
+          try {
+            // Archive expired events
+            const results = await ExpiredEventsService.processExpiredEvents(expiredEvents);
+            
+            if (results.archived > 0) {
+              toast.success(`${results.archived} expired event(s) archived successfully`);
+              
+              // Remove expired events from active events
+              const activeEvents = events.filter(event => !isEventExpired(event));
+              setEvents(activeEvents);
+              
+              // Also remove from Firestore
+              for (const expiredEvent of expiredEvents) {
+                try {
+                  await deleteDoc(doc(db, 'events', expiredEvent.id));
+                } catch (error) {
+                  console.error(`Error deleting expired event ${expiredEvent.id}:`, error);
+                }
+              }
+            }
+            
+            if (results.errors.length > 0) {
+              console.error('Some events failed to archive:', results.errors);
+              toast.error(`Failed to archive ${results.errors.length} event(s)`);
+            }
+          } catch (error) {
+            console.error('Error processing expired events:', error);
+          }
+        }
+      }
+    };
+
+    // Run immediately when events load
+    processExpiredEvents();
+    
+    // Set up interval to check every hour
+    const interval = setInterval(processExpiredEvents, 60 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [loading, events]);
 
   const addEvent = async (eventData) => {
     try {
@@ -519,6 +570,129 @@ export const EventProvider = ({ children }) => {
     }
   };
 
+  // Export attendee data for a specific event
+  const exportEventAttendees = async (eventId, format = 'csv') => {
+    try {
+      const event = events.find(e => e.id === eventId);
+      if (!event) {
+        throw new Error('Event not found');
+      }
+
+      const data = exportAttendeeData(event, format);
+      const filename = generateExportFilename(event, format);
+      
+      downloadFile(data, filename, format === 'csv' ? 'text/csv' : 'application/json');
+      toast.success(`Attendee data exported as ${format.toUpperCase()}`);
+      
+      return { success: true, filename };
+    } catch (error) {
+      console.error('Error exporting attendee data:', error);
+      toast.error('Failed to export attendee data: ' + error.message);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // Get archived (expired) events
+  const getArchivedEvents = async () => {
+    try {
+      return await ExpiredEventsService.getArchivedEvents();
+    } catch (error) {
+      console.error('Error fetching archived events:', error);
+      toast.error('Failed to fetch archived events');
+      return [];
+    }
+  };
+
+  // Export archived events data
+  const exportArchivedEvents = async (format = 'csv') => {
+    try {
+      const archivedEvents = await getArchivedEvents();
+      
+      if (archivedEvents.length === 0) {
+        toast.error('No archived events to export');
+        return { success: false, error: 'No archived events found' };
+      }
+
+      // Create summary export
+      let content = '';
+      let filename = '';
+      
+      if (format === 'csv') {
+        content = `Archived Events Summary\nGenerated: ${new Date().toLocaleString()}\nTotal Events: ${archivedEvents.length}\n\n`;
+        content += 'Event Title,Date,Location,Total Registered,Confirmed Attendees,Attendance Rate,Archived Date\n';
+        
+        archivedEvents.forEach(event => {
+          content += `"${event.title}","${event.date}","${event.location}",${event.totalRegistered},${event.confirmedAttendees?.length || 0},"${event.attendanceRate}%","${new Date(event.archivedAt).toLocaleDateString()}"\n`;
+        });
+        
+        filename = `archived_events_summary_${new Date().toISOString().split('T')[0]}.csv`;
+      } else {
+        content = JSON.stringify({
+          summary: {
+            generatedAt: new Date().toISOString(),
+            totalArchivedEvents: archivedEvents.length,
+            totalConfirmedAttendees: archivedEvents.reduce((sum, event) => 
+              sum + (event.confirmedAttendees?.length || 0), 0
+            )
+          },
+          events: archivedEvents
+        }, null, 2);
+        
+        filename = `archived_events_summary_${new Date().toISOString().split('T')[0]}.json`;
+      }
+      
+      downloadFile(content, filename, format === 'csv' ? 'text/csv' : 'application/json');
+      toast.success(`Archived events data exported as ${format.toUpperCase()}`);
+      
+      return { success: true, filename };
+    } catch (error) {
+      console.error('Error exporting archived events:', error);
+      toast.error('Failed to export archived events: ' + error.message);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // Manually trigger expired events processing
+  const processExpiredEventsManually = async () => {
+    try {
+      const expiredEvents = events.filter(event => isEventExpired(event));
+      
+      if (expiredEvents.length === 0) {
+        toast.info('No expired events found');
+        return { processed: 0 };
+      }
+
+      const results = await ExpiredEventsService.processExpiredEvents(expiredEvents);
+      
+      if (results.archived > 0) {
+        // Remove expired events from active events
+        const activeEvents = events.filter(event => !isEventExpired(event));
+        setEvents(activeEvents);
+        
+        // Also remove from Firestore
+        for (const expiredEvent of expiredEvents) {
+          try {
+            await deleteDoc(doc(db, 'events', expiredEvent.id));
+          } catch (error) {
+            console.error(`Error deleting expired event ${expiredEvent.id}:`, error);
+          }
+        }
+        
+        toast.success(`${results.archived} expired event(s) processed and archived`);
+      }
+      
+      if (results.errors.length > 0) {
+        toast.error(`Failed to process ${results.errors.length} event(s)`);
+      }
+      
+      return results;
+    } catch (error) {
+      console.error('Error processing expired events manually:', error);
+      toast.error('Failed to process expired events');
+      return { processed: 0, errors: [error.message] };
+    }
+  };
+
   const value = {
     events,
     loading,
@@ -530,7 +704,11 @@ export const EventProvider = ({ children }) => {
     canModifyEvent,
     clearAllEvents,
     regenerateQRCodes,
-    fixAttendeeQRCode
+    fixAttendeeQRCode,
+    exportEventAttendees,
+    getArchivedEvents,
+    exportArchivedEvents,
+    processExpiredEventsManually
   };
 
   return (

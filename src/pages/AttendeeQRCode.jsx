@@ -15,14 +15,6 @@ const AttendeeQRCode = () => {
   const event = events.find(e => e.id === eventId);
   const attendee = event?.attendees?.find(a => a.userId === (user?.id || user?.uid));
 
-  console.log('AttendeeQRCode Debug:', {
-    eventId,
-    userId: user?.id || user?.uid,
-    event: event ? { id: event.id, title: event.title } : null,
-    attendee: attendee ? { userId: attendee.userId, qrCode: attendee.qrCode } : null,
-    allAttendees: event?.attendees?.map(a => ({ userId: a.userId, userName: a.userName }))
-  });
-
   if (!event) {
     return (
       <div className="text-center py-12">

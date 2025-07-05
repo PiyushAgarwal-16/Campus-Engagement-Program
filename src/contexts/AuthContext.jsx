@@ -51,48 +51,37 @@ export const AuthProvider = ({ children }) => {
     // Clear all stored authentication data to prevent automatic login
     localStorage.clear(); // Clear all localStorage
     sessionStorage.clear(); // Clear all sessionStorage
-    
-    console.log('AuthContext initialized - clearing all storage and sessions');
 
     // Force sign out any existing Firebase sessions and wait for completion
     const clearAuthState = async () => {
       try {
         await signOut(auth);
-        console.log('Existing Firebase session signed out');
       } catch (error) {
-        console.log('No existing Firebase session to sign out or error:', error.message);
+        // No existing Firebase session to sign out or error
       }
       
       // Ensure user state is null
       setUser(null);
-      console.log('User state cleared - should show login page');
     };
 
     clearAuthState();
 
     // Set up Firebase auth listener - but don't auto-login
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log('Firebase auth state changed. User detected:', firebaseUser?.email || 'None');
-      
       if (firebaseUser) {
-        console.log('Firebase user found but NOT auto-logging in. Signing out to require explicit login.');
-        
         // Sign out the user immediately to prevent automatic login
         try {
           await signOut(auth);
-          console.log('Auto-signed out Firebase user to prevent automatic login');
         } catch (error) {
-          console.log('Error signing out auto-detected user:', error);
+          // Error signing out auto-detected user
         }
         
         setUser(null);
       } else {
-        console.log('No Firebase user detected - staying on login page');
         setUser(null);
       }
       setLoading(false);
     }, (error) => {
-      console.log('Firebase auth error:', error);
       setLoading(false);
     });
 
@@ -104,7 +93,6 @@ export const AuthProvider = ({ children }) => {
     try {
       // First, try Firebase authentication
       const result = await signInWithEmailAndPassword(auth, email, password);
-      console.log('Firebase login successful for:', result.user.email);
       
       // Since we disabled auto-login in auth state listener, manually fetch and set user data
       try {
@@ -135,7 +123,6 @@ export const AuthProvider = ({ children }) => {
         
         // Manually set user state for successful login
         setUser(userData);
-        console.log('User data set after login:', userData.email, 'Role:', userData.role);
       } catch (profileError) {
         console.error('Error fetching user profile after login:', profileError);
         // Fallback user data
@@ -151,8 +138,6 @@ export const AuthProvider = ({ children }) => {
       
       return result.user;
     } catch (error) {
-      console.log('Firebase login failed:', error.code, error.message);
-      
       // ONLY allow demo accounts as fallback and ONLY for specific Firebase errors
       const isDemoStudent = email === 'demo@university.edu' && password === 'demo123';
       const isDemoOrganizer = email === 'organizer@university.edu' && password === 'demo123';
@@ -165,8 +150,6 @@ export const AuthProvider = ({ children }) => {
       ].includes(error.code);
       
       if (isDemoAccount && isFirebaseUnavailable) {
-        console.log('Using demo fallback due to Firebase unavailability');
-        
         const mockUser = {
           uid: isDemoStudent ? 'demo-user-123' : 'demo-organizer-123',
           email: email,
@@ -192,7 +175,6 @@ export const AuthProvider = ({ children }) => {
       }
       
       // For ALL other cases (including wrong passwords, user not found, etc.), reject
-      console.log('Authentication rejected for:', email);
       throw error;
     } finally {
       setExplicitLoginInProgress(false);
@@ -201,9 +183,7 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (email, password, additionalData = {}) => {
     try {
-      console.log('Attempting Firebase signup for:', email, 'as role:', additionalData.role);
       const result = await createUserWithEmailAndPassword(auth, email, password);
-      console.log('Firebase signup successful for:', result.user.email);
       
       // Update the user's display name in Firebase Auth
       if (additionalData.name) {
@@ -238,11 +218,8 @@ export const AuthProvider = ({ children }) => {
       // Immediately set the user in state with correct role to avoid timing issues
       setUser(userProfile);
       
-      console.log('User profile created in Firestore:', userProfile);
       return result.user;
     } catch (error) {
-      console.log('Firebase signup failed:', error.code, error.message);
-      
       // NO fallback for signup - must use real Firebase
       // This ensures only legitimate accounts are created
       throw error;
@@ -269,7 +246,6 @@ export const AuthProvider = ({ children }) => {
           };
           
           setUser(userData);
-          console.log('User data refreshed:', userData.email, 'Role:', userData.role);
           return userData;
         }
       } catch (error) {
@@ -284,8 +260,6 @@ export const AuthProvider = ({ children }) => {
     if (!user) throw new Error('No user signed in');
     
     try {
-      console.log('Updating user profile:', updates);
-      
       // Update in Firestore
       const userDocRef = doc(db, 'users', user.id);
       const updateData = {
@@ -312,7 +286,6 @@ export const AuthProvider = ({ children }) => {
       };
       
       setUser(updatedUser);
-      console.log('Profile updated successfully:', updatedUser);
       
       return updatedUser;
     } catch (error) {
@@ -324,15 +297,12 @@ export const AuthProvider = ({ children }) => {
   // Enhanced logout with security checks
   const logout = async () => {
     try {
-      console.log('Logging out user:', user?.email);
-      
       // Clear demo user
       localStorage.removeItem('demo-user');
       
       // Sign out from Firebase
       await signOut(auth);
       setUser(null);
-      console.log('Logout successful');
     } catch (error) {
       console.error('Logout error:', error);
       // Even if Firebase logout fails, clear local state
@@ -354,11 +324,10 @@ export const AuthProvider = ({ children }) => {
         if (error.code === 'auth/user-not-found') {
           // Create demo user if it doesn't exist
           await createUserWithEmailAndPassword(auth, demoEmail, demoPassword);
-          console.log('Demo user created successfully');
         }
       }
     } catch (error) {
-      console.log('Demo user creation failed - this is normal if Firebase is not configured yet');
+      // Demo user creation failed - this is normal if Firebase is not configured yet
     }
   };
 
@@ -369,7 +338,6 @@ export const AuthProvider = ({ children }) => {
       const userData = JSON.parse(demoUser);
       if (userData.email !== 'demo@university.edu') {
         localStorage.removeItem('demo-user');
-        console.log('Cleared unauthorized demo user');
       }
     }
   }, []);
@@ -381,8 +349,6 @@ export const AuthProvider = ({ children }) => {
 
   // Debug function to completely clear all authentication data
   const clearAllAuthData = async () => {
-    console.log('Clearing all authentication data...');
-    
     // Clear all storage
     localStorage.clear();
     sessionStorage.clear();
@@ -390,14 +356,12 @@ export const AuthProvider = ({ children }) => {
     // Sign out from Firebase
     try {
       await signOut(auth);
-      console.log('Signed out from Firebase');
     } catch (error) {
-      console.log('No Firebase session to sign out');
+      // No Firebase session to sign out
     }
     
     // Clear user state
     setUser(null);
-    console.log('All authentication data cleared');
   };
 
   const value = {

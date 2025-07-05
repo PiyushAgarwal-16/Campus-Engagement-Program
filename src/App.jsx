@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Header from './components/Header';
-import DebugPanel from './components/DebugPanel';
-import CameraTest from './components/CameraTest';
 import Dashboard from './pages/Dashboard';
 import Events from './pages/Events';
 import EventDetails from './pages/EventDetails';
@@ -11,7 +9,7 @@ import CreateEvent from './pages/CreateEvent';
 import EditEvent from './pages/EditEvent';
 import Attendance from './pages/Attendance';
 import AttendeeQRCode from './pages/AttendeeQRCode';
-import QRTest from './pages/QRTest';
+import ArchivedEvents from './pages/ArchivedEvents';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -19,9 +17,6 @@ import { EventProvider } from './contexts/EventContext';
 
 function AppContent() {
   const { user, loading } = useAuth();
-
-  // Debug logging
-  console.log('AppContent - User state:', user?.email || 'null', 'Loading:', loading);
 
   if (loading) {
     return (
@@ -47,14 +42,12 @@ function AppContent() {
           <Route path="/edit-event/:id" element={<EditEvent />} />
           <Route path="/attendance/:eventId" element={<Attendance />} />
           <Route path="/qr-code/:eventId" element={<AttendeeQRCode />} />
-          <Route path="/qr-test" element={<QRTest />} />
+          <Route path="/archived-events" element={<ArchivedEvents />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
       <Toaster position="top-right" />
-      <DebugPanel />
-      <CameraTest />
     </div>
   );
 }

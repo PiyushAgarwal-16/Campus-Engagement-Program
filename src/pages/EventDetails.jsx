@@ -12,7 +12,8 @@ import {
   Share2,
   Edit,
   Trash2,
-  Scan
+  Scan,
+  Download
 } from 'lucide-react';
 import QRCode from 'qrcode.react';
 import toast from 'react-hot-toast';
@@ -22,7 +23,7 @@ import QRScanner from '../components/QRScanner';
 const EventDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { events, registerForEvent, canModifyEvent, deleteEvent } = useEvents();
+  const { events, registerForEvent, canModifyEvent, deleteEvent, exportEventAttendees } = useEvents();
   const { user } = useAuth();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -59,14 +60,8 @@ const EventDetails = () => {
   };
 
   const handleDelete = async () => {
-    console.log('handleDelete called');
-    console.log('Event ID:', event.id);
-    console.log('User ID:', user.id);
-    console.log('User role:', user.role);
-    
     try {
       await deleteEvent(event.id, user.id, user.role);
-      console.log('Delete successful, navigating to events');
       navigate('/events');
     } catch (error) {
       console.error('Delete failed:', error);
@@ -75,12 +70,10 @@ const EventDetails = () => {
   };
 
   const confirmDelete = () => {
-    console.log('confirmDelete called - showing modal');
     setShowDeleteConfirm(true);
   };
 
   const cancelDelete = () => {
-    console.log('cancelDelete called - hiding modal');
     setShowDeleteConfirm(false);
   };
 
@@ -94,6 +87,22 @@ const EventDetails = () => {
     } else {
       navigator.clipboard.writeText(window.location.href);
       toast.success('Event link copied to clipboard!');
+    }
+  };
+
+  const handleExportAttendees = async (format) => {
+    try {
+      const confirmedAttendees = event.attendees.filter(attendee => attendee.attended);
+      
+      if (confirmedAttendees.length === 0) {
+        toast.error('No confirmed attendees to export');
+        return;
+      }
+
+      await exportEventAttendees(event.id, format);
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Failed to export attendee data');
     }
   };
 
@@ -314,6 +323,40 @@ const EventDetails = () => {
                   <Scan className="w-5 h-5" />
                   <span>Start QR Scanner</span>
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* Export Data for Organizers */}
+          {user?.role === 'organizer' && event.attendees.some(a => a.attended) && (
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <Download className="w-5 h-5 mr-2" />
+                Export Attendee Data
+              </h3>
+              
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600">
+                  Export data for {event.attendees.filter(a => a.attended).length} confirmed attendee(s)
+                </p>
+                
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleExportAttendees('csv')}
+                    className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Export CSV</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => handleExportAttendees('json')}
+                    className="flex-1 bg-purple-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center justify-center space-x-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Export JSON</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}

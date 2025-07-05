@@ -37,8 +37,6 @@ const Login = () => {
         return;
       }
 
-      console.log(`Attempting ${isSignUp ? 'signup' : 'login'} for:`, email);
-      
       if (isSignUp) {
         // Validation for sign up
         if (!name.trim()) {
@@ -73,7 +71,6 @@ const Login = () => {
           ...(role === 'student' ? { studentId: studentId.trim() } : { organizationName: organizationName.trim() })
         };
         
-        console.log('Signup attempt with data:', additionalData);
         await signup(email, password, additionalData);
         
         // Force refresh user data to ensure role is correctly loaded
@@ -82,11 +79,9 @@ const Login = () => {
         }, 500);
         
         toast.success(`Account created successfully! Welcome to Campus Engage as ${role === 'student' ? 'a student' : 'an organizer'}!`);
-        console.log('Signup successful for:', email, 'with role:', role);
       } else {
         await login(email, password);
         toast.success('Welcome back to Campus Engage!');
-        console.log('Login successful for:', email);
       }
     } catch (error) {
       console.error('Auth error for', email, ':', error);

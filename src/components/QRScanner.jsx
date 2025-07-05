@@ -62,10 +62,6 @@ const QRScanner = ({ isOpen, onClose, eventId }) => {
         checkVideoElement();
       });
 
-      console.log('Video element is ready, starting camera...');
-
-      console.log('Starting camera for QR scanning...');
-
       // Try multiple camera constraints for better compatibility
       const constraints = [
         {
@@ -90,7 +86,6 @@ const QRScanner = ({ isOpen, onClose, eventId }) => {
       let stream = null;
       for (const constraint of constraints) {
         try {
-          console.log('Trying camera constraint:', constraint);
           stream = await navigator.mediaDevices.getUserMedia(constraint);
           break;
         } catch (err) {
@@ -124,7 +119,6 @@ const QRScanner = ({ isOpen, onClose, eventId }) => {
         }, 10000);
 
         const onLoadedMetadata = () => {
-          console.log('Video loaded - dimensions:', video.videoWidth, 'x', video.videoHeight);
           clearTimeout(timeout);
           resolve();
         };
@@ -142,13 +136,11 @@ const QRScanner = ({ isOpen, onClose, eventId }) => {
 
       // Now start QR code detection using ZXing
       try {
-        console.log('Starting ZXing QR detection...');
         await codeReaderRef.current.decodeFromVideoDevice(
           undefined, // Use default video input
           videoRef.current,
           (result, error) => {
             if (result) {
-              console.log('QR Code detected:', result.getText());
               handleScan(result.getText());
             }
             // Don't log NotFoundException errors as they're normal during scanning
@@ -157,14 +149,11 @@ const QRScanner = ({ isOpen, onClose, eventId }) => {
             }
           }
         );
-        console.log('ZXing QR detection started successfully');
       } catch (zxingError) {
         console.warn('ZXing initialization error, but camera feed should still work:', zxingError);
         // Camera feed will still be visible even if ZXing has issues
         setError('QR detection may not work automatically. Please use manual input if needed.');
       }
-
-      console.log('Camera started successfully');
       
     } catch (err) {
       console.error('Error starting camera:', err);
@@ -190,8 +179,6 @@ const QRScanner = ({ isOpen, onClose, eventId }) => {
 
   // Stop camera and scanning
   const stopCamera = () => {
-    console.log('Stopping camera...');
-    
     // Stop ZXing scanner
     if (codeReaderRef.current) {
       try {
@@ -205,7 +192,6 @@ const QRScanner = ({ isOpen, onClose, eventId }) => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => {
         track.stop();
-        console.log('Stopped video track:', track.kind);
       });
       streamRef.current = null;
     }
@@ -222,9 +208,7 @@ const QRScanner = ({ isOpen, onClose, eventId }) => {
   const handleManualInput = async (qrCode) => {
     if (!qrCode.trim()) return;
     
-    console.log('Scanning QR code:', qrCode.trim());
     const result = await markAttendance(qrCode.trim());
-    console.log('Scan result:', result);
     setScanResult(result);
     
     if (result.success) {
@@ -238,7 +222,6 @@ const QRScanner = ({ isOpen, onClose, eventId }) => {
   // Handle QR code scan (now actually called when QR code is detected)
   const handleScan = async (data) => {
     if (data && !scanResult && !processing) { // Only process if we haven't already processed a result
-      console.log('Processing scanned QR code:', data);
       setProcessing(true);
       stopCamera(); // Stop scanning immediately
       
@@ -292,18 +275,10 @@ const QRScanner = ({ isOpen, onClose, eventId }) => {
                 </p>
                 <button
                   onClick={startCamera}
-                  className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors mb-3"
+                  className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
                 >
                   Start Camera
                 </button>
-                
-                {/* Camera compatibility check */}
-                <div className="text-xs text-gray-500 mt-3">
-                  <p>📋 Camera Status:</p>
-                  <p>• Protocol: {location.protocol}</p>
-                  <p>• Camera API: {navigator.mediaDevices ? '✅ Available' : '❌ Not supported'}</p>
-                  <p>• Secure Context: {window.isSecureContext ? '✅ Yes' : '❌ No (HTTPS required)'}</p>
-                </div>
               </div>
             </div>
           )}
@@ -329,7 +304,7 @@ const QRScanner = ({ isOpen, onClose, eventId }) => {
                       display: 'block'
                     }}
                     onLoadedMetadata={() => {
-                      console.log('Video metadata loaded during loading state');
+                      // Video metadata loaded during loading state
                     }}
                   />
                 </div>
@@ -353,8 +328,7 @@ const QRScanner = ({ isOpen, onClose, eventId }) => {
                     display: 'block'
                   }}
                   onLoadedMetadata={() => {
-                    console.log('Video metadata loaded - camera feed should be visible');
-                    console.log('Video dimensions:', videoRef.current?.videoWidth, 'x', videoRef.current?.videoHeight);
+                    // Video metadata loaded - camera feed should be visible
                   }}
                   onError={(e) => {
                     console.error('Video error:', e);
