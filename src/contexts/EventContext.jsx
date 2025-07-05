@@ -380,6 +380,56 @@ export const EventProvider = ({ children }) => {
     }
   };
 
+  const unregisterFromEvent = async (eventId, userObj) => {
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
+
+    const userId = userObj.id || userObj.uid;
+    const attendee = event.attendees.find(attendee => attendee.userId === userId);
+    
+    if (!attendee) {
+      toast.error('You are not registered for this event!');
+      return;
+    }
+
+    // Check if user has already attended the event
+    if (attendee.attended) {
+      toast.error('Cannot unregister - you have already attended this event!');
+      return;
+    }
+
+    // Remove the attendee from the event
+    const updatedAttendees = event.attendees.filter(attendee => attendee.userId !== userId);
+
+    try {
+      await updateDoc(doc(db, 'events', eventId), {
+        attendees: updatedAttendees
+      });
+      
+      // Update local state immediately
+      const updatedEvents = events.map(event => 
+        event.id === eventId 
+          ? { ...event, attendees: updatedAttendees }
+          : event
+      );
+      setEvents(updatedEvents);
+      localStorage.setItem('campus-events', JSON.stringify(updatedEvents));
+      
+      toast.success('Successfully unregistered from the event!');
+    } catch (error) {
+      console.error('Error unregistering from event:', error);
+      // Fallback to local update
+      const updatedEvents = events.map(event => 
+        event.id === eventId 
+          ? { ...event, attendees: updatedAttendees }
+          : event
+      );
+      setEvents(updatedEvents);
+      localStorage.setItem('campus-events', JSON.stringify(updatedEvents));
+      toast.success('Successfully unregistered from the event (offline mode)!');
+    }
+  };
+
   // Mark attendance using scanned QR code
   const markAttendance = async (qrCodeData) => {
     try {
@@ -700,6 +750,7 @@ export const EventProvider = ({ children }) => {
     updateEvent,
     deleteEvent,
     registerForEvent,
+    unregisterFromEvent,
     markAttendance,
     canModifyEvent,
     clearAllEvents,

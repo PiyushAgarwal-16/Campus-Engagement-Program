@@ -23,7 +23,7 @@ import QRScanner from '../components/QRScanner';
 const EventDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { events, registerForEvent, canModifyEvent, deleteEvent, exportEventAttendees } = useEvents();
+  const { events, registerForEvent, unregisterFromEvent, canModifyEvent, deleteEvent, exportEventAttendees } = useEvents();
   const { user } = useAuth();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -47,12 +47,20 @@ const EventDetails = () => {
   const isRegistered = event.attendees.some(attendee => 
     (attendee.userId || attendee.id) === user.id
   );
+  const currentAttendee = event.attendees.find(attendee => 
+    (attendee.userId || attendee.id) === user.id
+  );
+  const hasAttended = currentAttendee?.attended || false;
   const availableSpots = event.maxAttendees - event.attendees.length;
   const isFull = availableSpots <= 0;
 
   const handleRegister = () => {
     registerForEvent(event.id, user);
     toast.success('Successfully registered for the event!');
+  };
+
+  const handleUnregister = () => {
+    unregisterFromEvent(event.id, user);
   };
 
   const handleEdit = () => {
@@ -245,8 +253,22 @@ const EventDetails = () => {
               )}
               
               {isRegistered && (
-                <div className="w-full bg-green-100 text-green-700 py-3 px-4 rounded-lg text-center font-medium">
-                  ✓ You're registered!
+                <div className="space-y-3">
+                  <div className={`w-full py-3 px-4 rounded-lg text-center font-medium ${
+                    hasAttended 
+                      ? 'bg-blue-100 text-blue-700' 
+                      : 'bg-green-100 text-green-700'
+                  }`}>
+                    {hasAttended ? '✓ You attended this event!' : '✓ You\'re registered!'}
+                  </div>
+                  {!hasAttended && (
+                    <button
+                      onClick={handleUnregister}
+                      className="w-full bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors"
+                    >
+                      Unregister from Event
+                    </button>
+                  )}
                 </div>
               )}
               

@@ -53,7 +53,7 @@ const exportToCSV = (event, attendees) => {
     ...attendees.map(attendee => [
       `"${attendee.userName || 'N/A'}"`,
       `"${attendee.userEmail || 'N/A'}"`,
-      `"${attendee.studentId || 'N/A'}"`,
+      `"${attendee.userStudentId || 'N/A'}"`,
       `"${formatDate(attendee.registeredAt) || 'N/A'}"`,
       `"${formatDate(attendee.attendedAt) || 'N/A'}"`,
       `"${attendee.qrCode || 'N/A'}"`
@@ -88,7 +88,7 @@ const exportToJSON = (event, attendees) => {
     confirmedAttendees: attendees.map(attendee => ({
       name: attendee.userName,
       email: attendee.userEmail,
-      studentId: attendee.studentId,
+      studentId: attendee.userStudentId,
       registrationDate: attendee.registeredAt,
       attendanceDate: attendee.attendedAt,
       qrCode: attendee.qrCode

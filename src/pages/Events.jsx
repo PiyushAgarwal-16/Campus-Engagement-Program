@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 const Events = () => {
-  const { events, registerForEvent } = useEvents();
+  const { events, registerForEvent, unregisterFromEvent } = useEvents();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -69,10 +69,21 @@ const Events = () => {
     registerForEvent(eventId, user);
   };
 
+  const handleUnregister = (eventId) => {
+    unregisterFromEvent(eventId, user);
+  };
+
   const isRegistered = (event) => {
     return event.attendees.some(attendee => 
       (attendee.userId || attendee.id) === user.id
     );
+  };
+
+  const hasAttended = (event) => {
+    const attendee = event.attendees.find(attendee => 
+      (attendee.userId || attendee.id) === user.id
+    );
+    return attendee?.attended || false;
   };
 
   const getAvailableSpots = (event) => {
@@ -187,6 +198,7 @@ const Events = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredEvents.map((event) => {
           const registered = isRegistered(event);
+          const attended = hasAttended(event);
           const availableSpots = getAvailableSpots(event);
           const isFull = availableSpots <= 0;
 
@@ -267,9 +279,18 @@ const Events = () => {
                     </button>
                   )}
                   
-                  {registered && (
-                    <div className="flex-1 bg-green-100 text-green-700 px-4 py-2 rounded-lg text-center font-medium">
-                      Registered ✓
+                  {registered && !attended && (
+                    <button
+                      onClick={() => handleUnregister(event.id)}
+                      className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors text-sm"
+                    >
+                      Unregister
+                    </button>
+                  )}
+                  
+                  {registered && attended && (
+                    <div className="flex-1 bg-blue-100 text-blue-700 px-4 py-2 rounded-lg text-center font-medium">
+                      Attended ✓
                     </div>
                   )}
                   
