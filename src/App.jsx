@@ -20,6 +20,9 @@ import { EventProvider } from './contexts/EventContext';
 function AppContent() {
   const { user, loading } = useAuth();
 
+  // Debug logging
+  console.log('AppContent - User state:', user?.email || 'null', 'Loading:', loading);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
