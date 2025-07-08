@@ -9,10 +9,9 @@ import {
   MapPin, 
   Plus,
   TrendingUp,
-  Bell,
+  Archive,
   Star
 } from 'lucide-react';
-import EventRecommendations from '../components/EventRecommendations';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -316,9 +315,6 @@ const Dashboard = () => {
             )}
           </div>
         </div>
-
-        {/* AI Event Recommendations */}
-        <EventRecommendations />
       </div>
 
       {/* Quick Actions */}
@@ -333,18 +329,25 @@ const Dashboard = () => {
             <span className="text-sm font-medium text-gray-900">Browse Events</span>
           </Link>
           
-          <Link
-            to="/create-event"
-            className="p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:shadow-sm transition-all text-center"
-          >
-            <Plus className="w-8 h-8 text-primary-600 mx-auto mb-2" />
-            <span className="text-sm font-medium text-gray-900">Create Event</span>
-          </Link>
+          {user?.role === 'organizer' && (
+            <Link
+              to="/create-event"
+              className="p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:shadow-sm transition-all text-center"
+            >
+              <Plus className="w-8 h-8 text-primary-600 mx-auto mb-2" />
+              <span className="text-sm font-medium text-gray-900">Create Event</span>
+            </Link>
+          )}
           
-          <button className="p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:shadow-sm transition-all text-center">
-            <Bell className="w-8 h-8 text-primary-600 mx-auto mb-2" />
-            <span className="text-sm font-medium text-gray-900">Notifications</span>
-          </button>
+          {user?.role === 'organizer' && (
+            <Link
+              to="/archived-events"
+              className="p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:shadow-sm transition-all text-center"
+            >
+              <Archive className="w-8 h-8 text-primary-600 mx-auto mb-2" />
+              <span className="text-sm font-medium text-gray-900">Archived Events</span>
+            </Link>
+          )}
           
           <Link
             to="/profile"

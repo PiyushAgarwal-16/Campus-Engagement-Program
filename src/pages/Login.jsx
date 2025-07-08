@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Calendar, Users, Bell, BarChart3, Eye, EyeOff } from 'lucide-react';
+import { Calendar, Users, BarChart3, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Login = () => {
@@ -119,9 +119,9 @@ const Login = () => {
       description: 'All campus events in one place - no more scattered information'
     },
     {
-      icon: Bell,
-      title: 'Real-time Notifications',
-      description: 'Get instant updates about events you care about'
+      icon: BarChart3,
+      title: 'Event Analytics',
+      description: 'Track attendance and engagement statistics'
     },
     {
       icon: Users,

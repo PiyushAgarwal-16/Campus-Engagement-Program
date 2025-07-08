@@ -8,7 +8,6 @@ import {
   Calendar, 
   Award, 
   Settings,
-  Bell,
   Shield,
   Edit2
 } from 'lucide-react';
@@ -296,8 +295,8 @@ const Profile = () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <Bell className="w-5 h-5 text-gray-400" />
-                  <span className="text-sm text-gray-700">Push Notifications</span>
+                  <Settings className="w-5 h-5 text-gray-400" />
+                  <span className="text-sm text-gray-700">Privacy Settings</span>
                 </div>
                 <input type="checkbox" defaultChecked className="toggle" />
               </div>

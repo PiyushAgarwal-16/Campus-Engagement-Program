@@ -5,7 +5,6 @@
 - React.js application with Vite build tool
 - Tailwind CSS for modern styling
 - Firebase integration ready
-- Google AI (Gemini) integration prepared
 - Complete component structure implemented
 
 ## 🚀 Quick Start Instructions
@@ -25,15 +24,7 @@ npm install
 4. Get your Firebase config from Project Settings > General > Your apps
 5. Replace the placeholder values in `src/config/firebase.js`
 
-### 3. Configure Google AI (Gemini)
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a project or select existing one
-3. Enable the **Vertex AI API**
-4. Go to APIs & Services > Credentials
-5. Create API Key
-6. Replace the placeholder in `src/config/gemini.js`
-
-### 4. Start Development Server
+### 3. Start Development Server
 ```bash
 npm run dev
 ```
@@ -52,18 +43,13 @@ The application will open at `http://localhost:3000`
 - **Event Details**: Click on any event to see detailed information
 - **Registration**: Register for events with one click
 
-### 2. AI-Powered Recommendations
-- **Dashboard**: View personalized event recommendations
-- **Smart Matching**: AI analyzes your activity and suggests relevant events
-- **Confidence Scoring**: See AI confidence levels for recommendations
-
-### 3. QR Code Attendance System
+### 2. QR Code Attendance System
 - **Event Registration**: Register for an event first
 - **QR Code Generation**: View your personal QR code for the event
 - **Attendance Tracking**: Simulate attendance marking
 - **Download Reports**: Export attendance data as CSV
 
-### 4. Event Creation
+### 3. Event Creation
 - **Create Event**: Use the "Create Event" page to add new events
 - **Form Validation**: Test the comprehensive form validation
 - **Preview**: See live preview of your event as you type
@@ -79,8 +65,7 @@ The application will open at `http://localhost:3000`
 1. Login with demo credentials
 2. Browse available events on Events page
 3. Register for 2-3 events that interest you
-4. Check your Dashboard for AI recommendations
-5. View your Profile to see updated statistics
+4. View your Profile to see updated statistics
 
 ### Scenario 2: Event Organizer Journey
 1. Create a new event using the Create Event form
@@ -163,19 +148,13 @@ npm run lint
 - [ ] Set up Firestore data structure
 - [ ] Add real QR code scanning
 
-### Phase 2: AI Enhancement
-- [ ] Integrate actual Gemini API
-- [ ] Implement advanced recommendation algorithms
-- [ ] Add natural language processing for event descriptions
-- [ ] Create smart notification timing
-
-### Phase 3: Advanced Features
+### Phase 2: Advanced Features
 - [ ] Push notifications system
 - [ ] Calendar integration
 - [ ] Mobile app development
 - [ ] Advanced analytics dashboard
 
-### Phase 4: Enterprise Features
+### Phase 3: Enterprise Features
 - [ ] Multi-campus support
 - [ ] LMS integration
 - [ ] Advanced user roles and permissions

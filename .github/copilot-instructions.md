@@ -8,7 +8,6 @@ This is a React-based campus engagement platform prototype that helps solve stud
 - **Frontend**: React.js with Vite build tool
 - **Styling**: Tailwind CSS
 - **Backend**: Firebase (Firestore, Authentication)
-- **AI Integration**: Google Gemini API for event recommendations
 - **Key Features**: Event management, attendance tracking, real-time notifications
 
 ## Architecture & Code Style
@@ -20,22 +19,15 @@ This is a React-based campus engagement platform prototype that helps solve stud
 
 ## Key Features Implemented
 1. **Centralized Event Management**: Unified platform for all campus events
-2. **AI-Powered Recommendations**: Gemini API integration for personalized event suggestions
-3. **QR Code Attendance Tracking**: Automated check-ins and attendance sheet generation
-4. **Real-time Updates**: Live event information and notifications
-5. **User Profiles**: Student profiles with activity tracking and achievements
+2. **QR Code Attendance Tracking**: Automated check-ins and attendance sheet generation
+3. **Real-time Updates**: Live event information and notifications
+4. **User Profiles**: Student profiles with activity tracking and achievements
 
 ## Firebase Integration Notes
 - Configure Firebase config in `src/config/firebase.js`
 - Use Firestore for event data, user profiles, and attendance records
 - Implement Firebase Authentication for user management
 - Set up Cloud Functions for backend logic and notifications
-
-## AI/Gemini Integration
-- Configure Gemini API key in `src/config/gemini.js`
-- Use AI for event recommendations based on user preferences
-- Implement smart notification timing
-- Generate attendance insights and event analytics
 
 ## Component Structure
 - `src/pages/`: Main page components (Dashboard, Events, etc.)

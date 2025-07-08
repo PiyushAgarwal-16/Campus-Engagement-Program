@@ -7,7 +7,6 @@ import {
   Plus, 
   User, 
   LogOut,
-  Bell,
   Archive
 } from 'lucide-react';
 
@@ -67,10 +66,6 @@ const Header = () => {
 
           {/* User Menu */}
           <div className="flex items-center space-x-4">
-            <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-              <Bell className="w-5 h-5" />
-            </button>
-            
             {/* Temporary refresh button for debugging */}
             <button 
               onClick={refreshUserData}

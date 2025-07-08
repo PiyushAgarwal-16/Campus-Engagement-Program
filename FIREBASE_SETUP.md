@@ -210,8 +210,7 @@ The app creates these Firestore collections:
 1. Login with `student@university.edu`
 2. Browse events on the Events page
 3. Register for events
-4. Check Dashboard for AI recommendations
-5. View Profile for statistics
+4. View Profile for statistics
 
 #### Organizer Flow:
 1. Login with `organizer@university.edu`

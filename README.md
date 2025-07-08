@@ -1,6 +1,6 @@
 # Campus Engagement Platform
 
-A modern, AI-powered campus engagement platform that centralizes event management, improves communication, and tracks attendance for educational institutions.
+A modern campus engagement platform that centralizes event management, improves communication, and tracks attendance for educational institutions.
 
 ## 🎯 Problem Statement
 
@@ -14,7 +14,6 @@ Low student engagement in campus activities due to:
 
 Our platform provides:
 - **Centralized Event Hub**: All campus events in one unified platform
-- **AI-Powered Recommendations**: Personalized event suggestions using Google Gemini API
 - **QR Code Attendance**: Automated check-ins and attendance sheet generation
 - **Real-time Notifications**: Instant updates about relevant events
 - **Comprehensive Analytics**: Event performance and engagement metrics
@@ -23,7 +22,6 @@ Our platform provides:
 
 - **Frontend**: React.js, Vite, Tailwind CSS
 - **Backend**: Firebase (Firestore, Authentication, Cloud Functions)
-- **AI Integration**: Google Gemini API, Vertex AI
 - **Additional Libraries**: 
   - React Router for navigation
   - QRCode.react for QR code generation
@@ -38,13 +36,7 @@ Our platform provides:
 - Real-time event updates and notifications
 - Category-based event organization
 
-### 2. AI-Powered Event Recommendations
-- Personalized event suggestions using Gemini API
-- Machine learning-based preference analysis
-- Smart event matching based on user behavior
-- Confidence scoring for recommendations
-
-### 3. QR Code Attendance Tracking
+### 2. QR Code Attendance Tracking
 - Automated attendance marking via QR codes
 - Real-time attendance monitoring
 - Downloadable attendance sheets (CSV format)
@@ -66,7 +58,6 @@ Our platform provides:
 
 ### Dashboard
 - Overview of upcoming events
-- AI-powered event recommendations
 - Quick action buttons
 - Activity statistics
 
@@ -109,17 +100,12 @@ Our platform provides:
    - Enable Authentication
    - Copy your Firebase config to `src/config/firebase.js`
 
-4. **Configure Google AI (Gemini)**
-   - Enable Vertex AI API in Google Cloud Console
-   - Generate API key for Gemini
-   - Add your API key to `src/config/gemini.js`
-
-5. **Start the development server**
+4. **Start the development server**
    ```bash
    npm run dev
    ```
 
-6. **Open your browser**
+5. **Open your browser**
    Navigate to `http://localhost:3000`
 
 ### Environment Setup
@@ -133,7 +119,6 @@ VITE_FIREBASE_PROJECT_ID=your_project_id
 VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
-VITE_GEMINI_API_KEY=your_gemini_api_key
 ```
 
 ## 📖 Usage
@@ -142,9 +127,8 @@ VITE_GEMINI_API_KEY=your_gemini_api_key
 1. **Login** with your university email
 2. **Browse Events** on the Events page
 3. **Register** for events you're interested in
-4. **Get AI Recommendations** on your dashboard
-5. **Mark Attendance** by scanning QR codes at events
-6. **Track Your Activity** on your profile page
+4. **Mark Attendance** by scanning QR codes at events
+5. **Track Your Activity** on your profile page
 
 ### For Event Organizers:
 1. **Create Events** using the event creation form
@@ -156,8 +140,7 @@ VITE_GEMINI_API_KEY=your_gemini_api_key
 ### For Administrators:
 1. **Monitor Platform Usage** through analytics
 2. **Manage User Accounts** and permissions
-3. **Configure AI Recommendations** parameters
-4. **Export Platform Data** for reporting
+3. **Export Platform Data** for reporting
 
 ## 🔧 Configuration
 
@@ -173,23 +156,6 @@ VITE_GEMINI_API_KEY=your_gemini_api_key
 ### Gemini AI Setup
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Enable Vertex AI API
-3. Create API credentials
-4. Add API key to `src/config/gemini.js`
-
-## 🤖 AI Features
-
-### Event Recommendations
-- Analyzes user event history and preferences
-- Uses Gemini API for intelligent matching
-- Provides confidence scores for recommendations
-- Continuously learns from user interactions
-
-### Smart Notifications
-- AI-powered timing optimization
-- Personalized notification content
-- Preference-based filtering
-- Engagement analytics
-
 ## 📊 Analytics & Reporting
 
 ### Event Analytics
@@ -267,7 +233,6 @@ For support and questions:
 ## 🙏 Acknowledgments
 
 - Firebase for backend infrastructure
-- Google AI (Gemini) for recommendation engine
 - Tailwind CSS for styling framework
 - React ecosystem for frontend development
 - Open source community for various libraries
